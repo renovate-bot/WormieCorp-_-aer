@@ -1,0 +1,21 @@
+[package]
+name = "pkg-upd"
+version = "0.1.0"
+authors = ["AdmiringWorm <kim.nordmo@gmail.com>"]
+edition = "2018"
+description = "Utility to update packages"
+readme = "README.md"
+repository = "https://github.com/WormieCorp/pkg-upd"
+license = "MIT"
+keywords = ["cli", "package", "packaging", "updater"]
+categories = ["command-line-utilities"]
+publish = false
+
+
+[profile.release]
+lto = true
+
+[dependencies]
+
+[dev-dependencies]
+rusty-hook = "0.11.2"
