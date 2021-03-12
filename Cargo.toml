@@ -16,6 +16,9 @@ publish = false
 lto = true
 
 [dependencies]
+serde = "1.0.124"
+serde_derive = "1.0.124"
 
 [dev-dependencies]
+rstest = "0.6.4"
 rusty-hook = "0.11.2"
