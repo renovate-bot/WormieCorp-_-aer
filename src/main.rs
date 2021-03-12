@@ -4,5 +4,5 @@
 extern crate pkg_upd;
 
 fn main() {
-	println!("Hello, world!");
+    println!("Hello, world!");
 }

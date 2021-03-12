@@ -20,10 +20,10 @@
 //! lowercase_id = true
 //! authors = ["AdmiringWorm"]
 //! description = """\
-//! 	This is a multiline description \
-//! 	example of what will be included \
-//! 	in a Chocolatey package. \
-//! 	The ending \\ means that all whitespace wil be trimmed \
+//!     This is a multiline description \
+//!     example of what will be included \
+//!     in a Chocolatey package. \
+//!     The ending \\ means that all whitespace wil be trimmed \
 //! """
 //! ```
 
