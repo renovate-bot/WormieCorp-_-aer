@@ -91,6 +91,10 @@ impl ChocolateyMetadata {
     where
         T: Display,
     {
+        if values.is_empty() {
+            panic!("Invalid usage: Authors can not be empty!");
+        }
+
         let mut new_authors = Vec::<String>::with_capacity(values.len());
 
         for val in values.iter() {
@@ -162,6 +166,13 @@ mod tests {
     }
 
     #[test]
+    #[should_panic]
+    fn with_authors_should_panic_on_empty_array() {
+        let val: Vec<String> = vec![];
+        ChocolateyMetadata::new().with_authors(&val);
+    }
+
+    #[test]
     fn authors_should_return_set_values() {
         let expected = ["gep13"];
         let data = ChocolateyMetadata::new().with_authors(&expected);
@@ -183,11 +194,12 @@ mod tests {
     }
 
     #[rstest(authors,
-		case(&[]),
-		case(&[""]),
+		case(vec![]),
+		case(vec!["".into()]),
 	)]
-    fn validate_data_should_add_issue_with_empty_authors(authors: &[&str]) {
-        let mut data = ChocolateyMetadata::new().with_authors(authors);
+    fn validate_data_should_add_issue_with_empty_authors(authors: Vec<String>) {
+        let mut data = ChocolateyMetadata::new();
+        data.authors = authors;
         data.description = "Some description".into();
         let expected = vec!["There must be at least 1 author specified for the software!"];
 
