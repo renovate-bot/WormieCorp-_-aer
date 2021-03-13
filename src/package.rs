@@ -43,6 +43,7 @@ pub trait Validate {
 /// Structure for holding all available data that a user can specify for a
 /// package.
 #[derive(Debug, Default, Deserialize, Serialize, PartialEq)]
+#[non_exhaustive]
 pub struct PackageData {
     pub metadata: PackageMetadata,
 }

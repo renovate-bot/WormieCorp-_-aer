@@ -7,4 +7,9 @@
 //! supporte package manager. Additionally a package compatible with the package
 //! manager will be created based on the information given.
 
+#![doc(
+    html_playground_url = "https://play.rust-lang.org/",
+    issue_tracker_base_url = "https://github.com/WormieCorp/pkg-upd/issues/"
+)]
+
 pub mod package;

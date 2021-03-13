@@ -7,6 +7,7 @@
 
 use std::fmt::Display;
 
+use semver::Version;
 use serde_derive::{Deserialize, Serialize};
 
 use crate::package::Validate;
@@ -37,7 +38,8 @@ use crate::package::Validate;
 ///
 /// assert_eq!(messages.len(), 2);
 /// ```
-#[derive(Debug, Default, Deserialize, Serialize, PartialEq)]
+#[derive(Debug, Deserialize, Serialize, PartialEq)]
+#[non_exhaustive]
 pub struct ChocolateyMetadata {
     /// Wether to use force the Chocolatey package
     /// created to use an identifier in a lowercase.
@@ -45,6 +47,11 @@ pub struct ChocolateyMetadata {
     /// the Chocolatey Community repository.
     #[serde(default = "default_lowercase_id")]
     lowercase_id: bool,
+
+    /// The version of the Chocolatey package, can be automatically updated and
+    /// is not necessary to initally be set.
+    #[serde(default = "crate::package::metadata::default_version")]
+    pub version: Version,
 
     /// The authors/developers of the software that
     /// the package will be created for.
@@ -67,6 +74,7 @@ impl ChocolateyMetadata {
     pub fn new() -> ChocolateyMetadata {
         ChocolateyMetadata {
             lowercase_id: default_lowercase_id(),
+            version: crate::package::metadata::default_version(),
             authors: vec![],
             description: String::new(),
         }
@@ -123,6 +131,12 @@ impl Validate for ChocolateyMetadata {
     }
 }
 
+impl Default for ChocolateyMetadata {
+    fn default() -> ChocolateyMetadata {
+        ChocolateyMetadata::new()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use rstest::rstest;
@@ -134,6 +148,7 @@ mod tests {
     fn new_should_create_with_expected_values() {
         let expected = ChocolateyMetadata {
             lowercase_id: true,
+            version: crate::package::metadata::default_version(),
             authors: vec![],
             description: String::new(),
         };

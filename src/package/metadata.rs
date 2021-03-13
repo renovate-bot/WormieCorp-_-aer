@@ -43,14 +43,10 @@ pub enum LicenseType {
 
 /// Stores common values that are related to 1 or more package managers.
 #[derive(Debug, Deserialize, Serialize, PartialEq)]
+#[non_exhaustive]
 pub struct PackageMetadata {
     /// The identifier of the package.
     id: String,
-
-    /// The version of the package, can be automatically updated and
-    /// is not necessary to initally be set.
-    #[serde(default = "default_version")]
-    pub version: Version,
 
     /// The list of maintainers that are responsible for the creating and
     /// maintaining of the package(s).
@@ -104,7 +100,7 @@ pub struct PackageMetadata {
     pub chocolatey: Option<chocolatey::ChocolateyMetadata>,
 }
 
-fn default_version() -> Version {
+pub(crate) fn default_version() -> Version {
     Version::parse("0.0.0").unwrap()
 }
 
@@ -135,7 +131,6 @@ impl PackageMetadata {
     pub fn new(id: &str) -> PackageMetadata {
         PackageMetadata {
             id: id.into(),
-            version: default_version(),
             project_url: Url::parse("https:/_Software_Location_REMOVE_OR_FILL_OUT_").unwrap(),
             maintainers: default_maintainer(),
             license: LicenseType::None,
@@ -209,7 +204,6 @@ mod tests {
     fn get_package() -> PackageMetadata {
         PackageMetadata {
             id: "test-package".into(),
-            version: default_version(),
             maintainers: default_maintainer(),
             project_url: Url::parse("https://_Software_Location_REMOVE_OR_FILL_OUT_").unwrap(),
             license: LicenseType::None,
