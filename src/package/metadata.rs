@@ -15,6 +15,11 @@ pub enum LicenseType {
     /// The item should in general never be used, but is provided for
     /// convenience.
     None,
+    /// The remote location of an url, this can be used when there is no
+    /// expression available for the package you want to create.
+    /// Depending on the package created the license may get downloaded during
+    /// updated and embedded in the package.
+    Location(Url),
     /// Allows specifying an expression of the License Type to use for the
     /// package.
     ///
@@ -24,11 +29,6 @@ pub enum LicenseType {
     /// to ensure the expression is valid for the packages that you are
     /// creating.
     Expression(String),
-    /// The remote location of an url, this can be used when there is no
-    /// expression available for the package you want to create.
-    /// Depending on the package created the license may get downloaded during
-    /// updated and embedded in the package.
-    Location(Url),
     /// Allows specifying both the expression and the remote location of a
     /// license. The item is preferred to be used when targeting multiple
     /// package managers.
@@ -37,8 +37,14 @@ pub enum LicenseType {
         /// package.
         expression: String,
         /// The remote location of an url
-        location: Url,
+        url: Url,
     },
+}
+
+impl Default for LicenseType {
+    fn default() -> Self {
+        Self::None
+    }
 }
 
 /// Stores common values that are related to 1 or more package managers.
@@ -55,6 +61,9 @@ pub struct PackageMetadata {
 
     /// The main endpoint (homepage) of the software.
     pub project_url: Url,
+
+    /// The short description of the software that will be packaged.
+    pub summary: String,
 
     /// The type of the license, this can be either a supported expression (Like
     /// `MIT`, `GPL`, etc.) or an url the location of the license.
@@ -89,12 +98,10 @@ pub struct PackageMetadata {
     ///
     /// ### Notes
     ///
-    /// If creating a chocolatey package, a license url is necessary when
-    /// pushing to the chocolatey repository.
+    /// If creating a chocolatey package, a license url is usually necessary
+    /// when pushing to the chocolatey repository.
+    #[serde(default)]
     pub license: LicenseType,
-
-    /// The short description of the software that will be packaged.
-    pub summary: String,
 
     /// The metadata that are only related to Chocolatey packages.
     pub chocolatey: Option<chocolatey::ChocolateyMetadata>,
