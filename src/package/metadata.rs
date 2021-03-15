@@ -52,12 +52,12 @@ impl Default for LicenseType {
 #[non_exhaustive]
 pub struct PackageMetadata {
     /// The identifier of the package.
-    id: String,
+    pub(crate) id: String,
 
     /// The list of maintainers that are responsible for the creating and
     /// maintaining of the package(s).
     #[serde(default = "default_maintainer")]
-    maintainers: Vec<String>,
+    pub(crate) maintainers: Vec<String>,
 
     /// The main endpoint (homepage) of the software.
     pub project_url: Url,
@@ -111,7 +111,7 @@ pub(crate) fn default_version() -> Version {
     Version::parse("0.0.0").unwrap()
 }
 
-fn default_maintainer() -> Vec<String> {
+pub(crate) fn default_maintainer() -> Vec<String> {
     vec![match std::env::var("PKG_MAINTAINER") {
         Ok(maintainer) => maintainer,
         Err(_) => whoami::username(),

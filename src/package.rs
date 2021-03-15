@@ -29,7 +29,7 @@
 //! ```
 
 pub mod chocolatey;
-mod metadata;
+pub(crate) mod metadata;
 
 pub use metadata::{LicenseType, PackageMetadata};
 use serde_derive::{Deserialize, Serialize};

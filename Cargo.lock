@@ -150,11 +150,13 @@ dependencies = [
 name = "pkg-upd"
 version = "0.1.0"
 dependencies = [
+ "log",
  "rstest",
  "rusty-hook",
  "semver 0.11.0",
  "serde",
  "serde_derive",
+ "toml",
  "url",
  "whoami",
 ]
