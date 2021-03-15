@@ -9,11 +9,7 @@
             "request": "launch",
             "name": "Debug executable 'pkg-upd'",
             "cargo": {
-                "args": [
-                    "build",
-                    "--bin=pkg-upd",
-                    "--package=pkg-upd"
-                ],
+                "args": ["build", "--bin=pkg-upd", "--package=pkg-upd"],
                 "filter": {
                     "name": "pkg-upd",
                     "kind": "bin"
@@ -30,12 +26,12 @@
                 "args": [
                     "test",
                     "--no-run",
-                    "--bin=pkg-upd",
+                    "--lib=pkg-upd",
                     "--package=pkg-upd"
                 ],
                 "filter": {
                     "name": "pkg-upd",
-                    "kind": "bin"
+                    "kind": "lib"
                 }
             },
             "args": [],
