@@ -1,0 +1,29 @@
+[package]
+name = "pkg-upd"
+version = "0.1.0"
+authors = ["AdmiringWorm <kim.nordmo@gmail.com>"]
+edition = "2018"
+description = "Utility to update packages"
+readme = "README.md"
+repository = "https://github.com/WormieCorp/pkg-upd"
+license = "MIT"
+keywords = ["cli", "package", "packaging", "updater"]
+categories = ["command-line-utilities"]
+publish = false
+
+[dependencies]
+lazy_static = "1.4.0"
+log = "0.4.14"
+pkg-license = { path = "../pkg-license" }
+semver = { version = "0.11.0", features = ["serde"] }
+serde = "1.0.124"
+serde_derive = "1.0.124"
+toml = "0.5.8"
+url = { version = "2.2.1", features = ["serde"] }
+whoami = "1.1.0"
+
+[build-dependencies]
+rusty-hook = "0.11.2"
+
+[dev-dependencies]
+rstest = "0.6.4"

@@ -1,0 +1,11 @@
+[package]
+name = "pkg-license"
+version = "0.1.0"
+authors = ["AdmiringWorm <kim.nordmo@gmail.com>"]
+edition = "2018"
+publish = false
+
+[dependencies]
+serde = "1.0.124"
+serde_derive = "1.0.124"
+url = "2.2.1"

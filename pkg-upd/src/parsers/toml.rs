@@ -58,12 +58,13 @@ mod tests {
     use std::path::PathBuf;
     use std::str::FromStr;
 
+    use pkg_license::LicenseType;
     use rstest::rstest;
     use url::Url;
 
     use super::*;
     use crate::package::chocolatey::ChocolateyMetadata;
-    use crate::package::{LicenseType, PackageData, PackageMetadata};
+    use crate::package::{PackageData, PackageMetadata};
 
     struct ErrorReader {
         kind: ErrorKind,

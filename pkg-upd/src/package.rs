@@ -31,7 +31,7 @@
 pub mod chocolatey;
 pub(crate) mod metadata;
 
-pub use metadata::{LicenseType, PackageMetadata};
+pub use metadata::PackageMetadata;
 use serde_derive::{Deserialize, Serialize};
 
 /// Validates any item that implements this trait for missing information, or
