@@ -1,7 +1,7 @@
 // Copyright (c) 2021 Kim J. Nordmo and WormieCorp.
 // Licensed under the MIT license. See LICENSE.txt file in the project
 
-use serde_derive::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize};
 use url::Url;
 
 /// The type or location of the license for the packaged software.
@@ -41,5 +41,123 @@ pub enum LicenseType {
 impl Default for LicenseType {
     fn default() -> Self {
         Self::None
+    }
+}
+
+impl LicenseType {
+    pub fn license_url(&self) -> Option<&str> {
+        match self {
+            LicenseType::Location(url) | LicenseType::ExpressionAndLocation { url, .. } => {
+                Some(url.as_str())
+            }
+            LicenseType::Expression(expression) => {
+                let resolved = license::from_id(&expression);
+                if let Some(license) = resolved {
+                    if !license.see_also().is_empty() {
+                        return Some(license.see_also()[0]);
+                    }
+                }
+                let resolved = license::from_id_ext(&expression);
+                if let Some(license) = resolved {
+                    if !license.see_also().is_empty() {
+                        return Some(license.see_also()[0]);
+                    }
+                }
+                let resolved = license::from_id_exception(&expression);
+                if let Some(license) = resolved {
+                    if !license.see_also().is_empty() {
+                        return Some(license.see_also()[0]);
+                    }
+                }
+
+                None
+            }
+
+            _ => None,
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use rstest::rstest;
+
+    use super::*;
+
+    #[test]
+    fn license_url_should_return_url_set_with_location() {
+        let license = LicenseType::Location(
+            Url::parse("https://github.com/cake-contrib/Cake.Warp/blob/develop/LICENSE").unwrap(),
+        );
+
+        assert_eq!(
+            license.license_url(),
+            Some("https://github.com/cake-contrib/Cake.Warp/blob/develop/LICENSE")
+        );
+    }
+
+    #[test]
+    fn license_url_should_return_url_set_with_expression_and_url() {
+        let license = LicenseType::ExpressionAndLocation {
+            url: Url::parse("https://github.com/cake-contrib/Cake.Warp/blob/develop/LICENSE")
+                .unwrap(),
+            expression: "MIT".into(),
+        };
+
+        assert_eq!(
+            license.license_url(),
+            Some("https://github.com/cake-contrib/Cake.Warp/blob/develop/LICENSE")
+        )
+    }
+
+    #[test]
+    #[allow(non_snake_case)]
+    fn license_url_should_None_when_license_is_not_set() {
+        let license = LicenseType::None;
+
+        assert_eq!(license.license_url(), None);
+    }
+
+    #[test]
+    #[allow(non_snake_case)]
+    fn license_url_should_return_None_on_unknown_license_type() {
+        let license = LicenseType::Expression("Custom".into());
+
+        assert_eq!(license.license_url(), None);
+    }
+
+    #[rstest(
+        expression,
+        url,
+        case("Apache-2.0", "http://www.apache.org/licenses/LICENSE-2.0"),
+        case("BSD-3-Clause", "https://opensource.org/licenses/BSD-3-Clause"),
+        case("BSD-2-Clause", "https://opensource.org/licenses/BSD-2-Clause"),
+        case(
+            "GPL-2.0",
+            "https://www.gnu.org/licenses/old-licenses/gpl-2.0-standalone.html"
+        ),
+        case(
+            "GPL-2.0-only",
+            "https://www.gnu.org/licenses/old-licenses/gpl-2.0-standalone.html"
+        ),
+        case("GPL-3.0", "https://www.gnu.org/licenses/gpl-3.0-standalone.html"),
+        case(
+            "LGPL-2.0",
+            "https://www.gnu.org/licenses/old-licenses/lgpl-2.0-standalone.html"
+        ),
+        case(
+            "LGPL-2.1",
+            "https://www.gnu.org/licenses/old-licenses/lgpl-2.1-standalone.html"
+        ),
+        case("LGPL-3.0", "https://www.gnu.org/licenses/lgpl-3.0-standalone.html"),
+        case("MIT", "https://opensource.org/licenses/MIT"),
+        case("MPL-2.0", "http://www.mozilla.org/MPL/2.0/"),
+        case("CDDL-1.0", "https://opensource.org/licenses/cddl1"),
+        case("EPL-2.0", "https://www.eclipse.org/legal/epl-2.0")
+    )]
+    fn license_url_should_return_correct_license_url_for_expression(expression: &str, url: &str) {
+        let license = LicenseType::Expression(expression.into());
+
+        assert_eq!(license.license_url(), Some(url));
     }
 }

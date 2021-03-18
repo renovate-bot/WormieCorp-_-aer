@@ -6,6 +6,9 @@ edition = "2018"
 publish = false
 
 [dependencies]
+license = "1.1.10"
 serde = "1.0.124"
-serde_derive = "1.0.124"
-url = "2.2.1"
+url = { version = "2.2.1", features = ["serde"] }
+
+[dev-dependencies]
+rstest = "0.6.4"
