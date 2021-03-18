@@ -3,9 +3,11 @@
 
 use std::error::Error;
 use std::fmt;
+use std::path::PathBuf;
 
 #[derive(Debug)]
 pub enum ParserError {
+    NoParsers(PathBuf),
     Loading(std::io::Error),
     Deserialize(String),
     Other { inner: Box<dyn Error> },
@@ -17,6 +19,13 @@ impl fmt::Display for ParserError {
             ParserError::Loading(err) => err.fmt(f),
             ParserError::Deserialize(s) => s.fmt(f),
             ParserError::Other { inner } => inner.fmt(f),
+            ParserError::NoParsers(path) => {
+                write!(
+                    f,
+                    "No parser that could handle {} was found!",
+                    path.display()
+                )
+            }
         }
     }
 }

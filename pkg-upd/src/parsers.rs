@@ -52,3 +52,18 @@ pub trait DataReader {
     /// an error if one occurs.
     fn read_data<T: Read>(&self, reader: &mut T) -> Result<PackageData, errors::ParserError>;
 }
+
+pub fn read_file(path: &Path) -> Result<PackageData, errors::ParserError> {
+    let parsers = [toml::TomlParser];
+
+    for parser in &parsers {
+        let data = parser.read_file(path);
+        if let Ok(data) = data {
+            return Ok(data);
+        } else if parser.can_handle_file(path) {
+            return data;
+        }
+    }
+
+    Err(errors::ParserError::NoParsers(path.to_owned()))
+}

@@ -16,7 +16,11 @@ pub struct TomlParser;
 /// See enhancement issue: #1
 impl DataReader for TomlParser {
     fn can_handle_file(&self, path: &Path) -> bool {
-        path.ends_with(".pkg.toml")
+        if let Some(path) = path.to_str() {
+            path.ends_with(".pkg.toml")
+        } else {
+            false
+        }
     }
 
     /// Reads and deserializes a `TOML` document in the specified reader passed
@@ -240,7 +244,7 @@ mod tests {
 
     #[test]
     fn read_data_should_deserialize_all_data() {
-        const VAL: &[u8] = include_bytes!("../../test-data/deserialize-full.toml");
+        const VAL: &[u8] = include_bytes!("../../test-data/deserialize-full.pkg.toml");
         let mut reader = BufReader::new(VAL);
         let parser = TomlParser;
         let expected = {
