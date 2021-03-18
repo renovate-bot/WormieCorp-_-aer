@@ -1,0 +1,5 @@
+[metadata]
+id = "test-package"
+project_url = "https://example-repo.org"
+summary = ""
+license = "MIT"

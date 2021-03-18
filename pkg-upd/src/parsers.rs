@@ -6,8 +6,7 @@ use std::io::{BufReader, Error as IoError, ErrorKind, Read};
 use std::path::Path;
 
 use log::warn;
-
-use crate::package::PackageData;
+use pkg_data::prelude::*;
 
 pub mod errors;
 pub mod toml;

@@ -1,0 +1,5 @@
+[metadata]
+id = "test-package"
+project_url = "https://test.com"
+summary = "Some kind of summary (or description in some packages)"
+maintainers = ["AdmiringWorm"]

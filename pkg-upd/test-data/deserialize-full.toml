@@ -1,0 +1,33 @@
+[metadata]
+id = "astyle"
+maintainers = ["AdmiringWorm", "yying"]
+summary = "Artistic Style is a source code indenter, formater, and beutifier for the C, C++, C++/CLI, Objective-C, C# and Java programming languages."
+project_url = "http://astyle.sourceforge.net/"
+project_source_url = "https://github.com/AdmiringWorm/chocolatey-packages/tree/master/astyle"
+license = { expression = "MIT", url = "https://sourceforge.net/p/astyle/code/HEAD/tree/trunk/AStyle/LICENSE.md" }
+
+[metadata.chocolatey]
+title = "Artistic Style"
+version = "3.1.0"
+authors = ["Jim Pattee", "Tal Davidson"]
+copyright = "Copyright (c) 2014 Jim Pattee, Tal Dividson"
+requireLicenseAcceptance = false
+documentation_url = "http://astyle.sourceforge.net/astyle.html"
+issues_url = "https://sourceforge/net/p/astyle/bugs"
+tags = ["astyle", "beautifier", "command-only", "development"]
+release_notes = '''\
+[Software Changelog](http://astyle.sourceforge.net/notes.html)
+[Package Changelog](https://github.com/AdmiringWorm/chocolatey-packages/blob/master/automatic/astyle/Changelog.md)
+'''
+description = { from = "./astyle.md", skip_start = 2, skip_end = 1 }
+
+[metadata.chocolatey.dependencies]
+'chocolatey-core.extension' = "1.3.3"
+
+[updater.chocolatey]
+embedded = true
+type = "archive"
+parse_url = { url = "https://sourceforge.net/projects/astyle/files/astyle/", regex = '''astyle( |%30)(?P<version>[\d\.]+)/$''' }
+
+[updater.chocolatey.regexes]
+arch32 = '''windows\.zip/download$'''

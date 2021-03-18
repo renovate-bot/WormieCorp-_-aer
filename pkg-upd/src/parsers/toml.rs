@@ -5,8 +5,9 @@ use std::io::Read;
 use std::path::Path;
 
 use log::{debug, error};
+use pkg_data::PackageData;
 
-use crate::parsers::{errors, DataReader, PackageData};
+use crate::parsers::{errors, DataReader};
 
 pub struct TomlParser;
 
@@ -58,13 +59,11 @@ mod tests {
     use std::path::PathBuf;
     use std::str::FromStr;
 
-    use pkg_license::LicenseType;
+    use pkg_data::prelude::*;
     use rstest::rstest;
     use url::Url;
 
     use super::*;
-    use crate::package::chocolatey::ChocolateyMetadata;
-    use crate::package::{PackageData, PackageMetadata};
 
     struct ErrorReader {
         kind: ErrorKind,
@@ -131,131 +130,151 @@ mod tests {
 
     #[test]
     fn read_data_should_succeed_on_required_values_defined() {
-        const VAL: &[u8] = br#"[metadata]
-        id = "test-package"
-        project_url = "https://test.com"
-        summary = "Some kind of summary (or description in some packages)"
-        "#;
+        const VAL: &[u8] = include_bytes!("../../test-data/basic-metadata.toml");
         let mut reader = BufReader::new(VAL);
         let parser = TomlParser;
-        let expected = PackageData {
-            metadata: PackageMetadata {
-                id: "test-package".into(),
-                project_url: Url::parse("https://test.com").unwrap(),
-                summary: "Some kind of summary (or description in some packages)".into(),
-                license: LicenseType::None,
-                chocolatey: None,
-                maintainers: crate::package::metadata::default_maintainer(),
-            },
+        let expected = {
+            let mut pkg = PackageData::new("test-package");
+            pkg.metadata_mut().set_license(LicenseType::None);
+            pkg.metadata_mut().set_maintainers(&["AdmiringWorm"]);
+            pkg.metadata_mut().set_project_url("https://test.com");
+            pkg.metadata_mut().summary =
+                "Some kind of summary (or description in some packages)".to_owned();
+            pkg
         };
 
-        let result = parser.read_data(&mut reader);
+        let result = parser.read_data(&mut reader).unwrap();
 
-        assert_eq!(result.unwrap(), expected);
+        assert_eq!(result, expected);
     }
 
     #[test]
     fn read_data_should_accept_license_expression() {
-        const VAL: &[u8] = br#"[metadata]
-        id = "test-package"
-        project_url = "https:/_Software_Location_REMOVE_OR_FILL_OUT_"
-        summary = ""
-        license = "MIT""#;
+        const VAL: &[u8] = include_bytes!("../../test-data/license-expression.toml");
         let mut reader = BufReader::new(VAL);
         let parser = TomlParser;
         let mut expected = PackageData::new("test-package");
-        expected.metadata.license = LicenseType::Expression("MIT".into());
+        expected
+            .metadata_mut()
+            .set_license(LicenseType::Expression("MIT".to_owned()));
 
-        let actual = parser.read_data(&mut reader);
+        let actual = parser.read_data(&mut reader).unwrap();
 
-        assert_eq!(actual.unwrap(), expected);
+        assert_eq!(actual, expected);
     }
 
     #[test]
     fn read_data_should_accept_license_url() {
-        const VAL: &[u8] = br#"[metadata]
-        id = "test-package"
-        project_url = "https:/_Software_Location_REMOVE_OR_FILL_OUT_"
-        summary = ""
-        license = "https://github.com/WormieCorp/pkg-upd/LICENSE.txt""#;
+        const VAL: &[u8] = include_bytes!("../../test-data/license-url.toml");
         let mut reader = BufReader::new(VAL);
         let parser = TomlParser;
         let mut expected = PackageData::new("test-package");
-        expected.metadata.license = LicenseType::Location(
+        expected.metadata_mut().set_license(LicenseType::Location(
             Url::parse("https://github.com/WormieCorp/pkg-upd/LICENSE.txt").unwrap(),
-        );
+        ));
 
-        let actual = parser.read_data(&mut reader);
+        let actual = parser.read_data(&mut reader).unwrap();
 
-        assert_eq!(actual.unwrap(), expected);
+        assert_eq!(actual, expected);
     }
 
     #[test]
     fn read_data_should_accept_license_expression_and_url() {
-        const VAL: &[u8] = br#"[metadata]
-        id = "test-package"
-        project_url = "https:/_Software_Location_REMOVE_OR_FILL_OUT_"
-        summary = ""
-        license = { url = "https://github.com/WormieCorp/pkg-upd/LICENSE.txt", expression = "MIT" }"#;
+        const VAL: &[u8] = include_bytes!("../../test-data/license-short.toml");
         let mut reader = BufReader::new(VAL);
         let parser = TomlParser;
         let mut expected = PackageData::new("test-package");
-        expected.metadata.license = LicenseType::ExpressionAndLocation {
-            url: Url::parse("https://github.com/WormieCorp/pkg-upd/LICENSE.txt").unwrap(),
-            expression: "MIT".into(),
-        };
+        expected
+            .metadata_mut()
+            .set_license(LicenseType::ExpressionAndLocation {
+                url: Url::parse("https://github.com/WormieCorp/pkg-upd/LICENSE.txt").unwrap(),
+                expression: "MIT".into(),
+            });
 
-        let actual = parser.read_data(&mut reader);
+        let actual = parser.read_data(&mut reader).unwrap();
 
-        assert_eq!(actual.unwrap(), expected);
+        assert_eq!(actual, expected);
     }
 
     #[test]
     fn read_data_should_accept_license_in_seperate_section() {
-        const VAL: &[u8] = br#"[metadata]
-        id = "test-package"
-        project_url = "https://_Software_Location_REMOVE_OR_FILL_OUT_"
-        summary = ""
-
-        [metadata.license]
-        url = "https://github.com/WormieCorp/pkg-upd/LICENSE.txt"
-        expression = "MIT""#;
+        const VAL: &[u8] = include_bytes!("../../test-data/license-long.toml");
         let mut reader = BufReader::new(VAL);
         let parser = TomlParser;
         let mut expected = PackageData::new("test-package");
-        expected.metadata.license = LicenseType::ExpressionAndLocation {
-            url: Url::parse("https://github.com/WormieCorp/pkg-upd/LICENSE.txt").unwrap(),
-            expression: "MIT".into(),
-        };
+        expected
+            .metadata_mut()
+            .set_license(LicenseType::ExpressionAndLocation {
+                url: Url::parse("https://github.com/WormieCorp/pkg-upd/LICENSE.txt").unwrap(),
+                expression: "MIT".into(),
+            });
 
-        let actual = parser.read_data(&mut reader);
+        let actual = parser.read_data(&mut reader).unwrap();
 
-        assert_eq!(actual.unwrap(), expected);
+        assert_eq!(actual, expected);
     }
 
     #[test]
     fn read_data_should_accept_chocolatey_arguments() {
-        const VAL: &[u8] = br#"[metadata]
-        id = "test-package"
-        project_url = "https:/_Software_Location_REMOVE_OR_FILL_OUT_"
-        summary = ""
-        license = "MIT"
-
-        [metadata.chocolatey]
-        authors = ["WormieCorp"]
-        description = "Some description""#;
+        const VAL: &[u8] = include_bytes!("../../test-data/metadata-choco.toml");
         let mut reader = BufReader::new(VAL);
         let parser = TomlParser;
-        let mut expected = PackageData::new("test-package");
-        expected.metadata = expected.metadata.with_chocolatey({
-            let mut choco = ChocolateyMetadata::new().with_authors(&["WormieCorp"]);
-            choco.description = "Some description".into();
+        let mut expected = {
+            let mut pkg = PackageData::new("test-package");
+            pkg.metadata_mut()
+                .set_license(LicenseType::Expression("MIT".to_owned()));
+            pkg.metadata_mut()
+                .set_project_url("https:/_Software_Location_REMOVE_OR_FILL_OUT_");
+            pkg
+        };
+        expected.metadata_mut().set_chocolatey({
+            let mut choco = ChocolateyMetadata::with_authors(&["WormieCorp"]);
+            choco.set_description_str("Some description");
             choco
         });
-        expected.metadata.license = LicenseType::Expression("MIT".into());
 
-        let actual = parser.read_data(&mut reader);
+        let actual = parser.read_data(&mut reader).unwrap();
 
-        assert_eq!(actual.unwrap(), expected);
+        assert_eq!(actual, expected);
+    }
+
+    #[test]
+    fn read_data_should_deserialize_all_data() {
+        const VAL: &[u8] = include_bytes!("../../test-data/deserialize-full.toml");
+        let mut reader = BufReader::new(VAL);
+        let parser = TomlParser;
+        let expected = {
+            let mut pkg = PackageData::new("astyle");
+            let mut metadata = pkg.metadata_mut();
+            metadata.set_license(LicenseType::ExpressionAndLocation {
+                expression: "MIT".into(),
+                url: Url::parse(
+                    "https://sourceforge.net/p/astyle/code/HEAD/tree/trunk/AStyle/LICENSE.md",
+                )
+                .unwrap(),
+            });
+            metadata.set_maintainers(&["AdmiringWorm", "yying"]);
+            metadata.set_project_url("http://astyle.sourceforge.net/");
+            metadata.summary = "Artistic Style is a source code indenter, formater, and beutifier \
+                                for the C, C++, C++/CLI, Objective-C, C# and Java programming \
+                                languages."
+                .into();
+            metadata.set_chocolatey({
+                let mut choco = ChocolateyMetadata::with_authors(&["Jim Pattee", "Tal Davidson"]);
+                choco.set_description(Description::Location {
+                    from: "./astyle.md".into(),
+                    skip_start: 2,
+                    skip_end: 1,
+                });
+                choco.version = semver::Version::new(3, 1, 0);
+                choco
+            });
+
+            pkg
+        };
+
+        let actual = parser.read_data(&mut reader).unwrap();
+
+        assert_eq!(actual, expected);
     }
 }

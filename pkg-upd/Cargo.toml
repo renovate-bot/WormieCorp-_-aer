@@ -14,6 +14,7 @@ publish = false
 [dependencies]
 lazy_static = "1.4.0"
 log = "0.4.14"
+pkg-data = { path = "../pkg-data" }
 pkg-license = { path = "../pkg-license" }
 semver = { version = "0.11.0", features = ["serde"] }
 serde = "1.0.124"

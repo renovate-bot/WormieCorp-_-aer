@@ -28,39 +28,36 @@
 //! """
 //! ```
 
-pub mod chocolatey;
-pub(crate) mod metadata;
+mod defaults;
+pub mod metadata;
+pub mod prelude;
 
-pub use metadata::PackageMetadata;
-use serde_derive::{Deserialize, Serialize};
-
-/// Validates any item that implements this trait for missing information, or
-/// any information that will cause a failure.
-pub trait Validate {
-    fn validate_data(&self) -> Vec<String>;
-}
+use serde::{Deserialize, Serialize};
 
 /// Structure for holding all available data that a user can specify for a
 /// package.
-#[derive(Debug, Default, Deserialize, Serialize, PartialEq)]
+#[derive(Debug, Deserialize, Serialize, PartialEq)]
 #[non_exhaustive]
 pub struct PackageData {
-    pub metadata: PackageMetadata,
+    /// The metadata that will be part of any package that gets created.
+    metadata: metadata::PackageMetadata,
 }
 
 impl PackageData {
-    /// Creates a new instance of a structure holding user data.
+    // Creates a new instance of a structure holding user data.
     pub fn new(id: &str) -> PackageData {
         PackageData {
-            metadata: PackageMetadata::new(id),
+            metadata: metadata::PackageMetadata::new(id),
         }
     }
-}
 
-impl Validate for PackageData {
-    /// Validates all stored information recursively
-    fn validate_data(&self) -> Vec<String> {
-        self.metadata.validate_data()
+    /// Returns the metadata available for this package.
+    pub fn metadata(&self) -> &metadata::PackageMetadata {
+        &self.metadata
+    }
+
+    pub fn metadata_mut(&mut self) -> &mut metadata::PackageMetadata {
+        &mut self.metadata
     }
 }
 
@@ -69,31 +66,29 @@ mod tests {
     use super::*;
 
     #[test]
-    fn new_should_create_data_with_default_values() {
+    fn new_should_set_expected_values() {
         let expected = PackageData {
-            metadata: PackageMetadata::new("test-package"),
+            metadata: metadata::PackageMetadata::new("test-id"),
         };
 
-        let actual = PackageData::new("test-package");
+        let actual = PackageData::new("test-id");
 
         assert_eq!(actual, expected);
     }
 
     #[test]
-    fn validate_should_create_validation_message() {
-        let pkg = PackageData::new("");
+    fn metadata_should_return_set_metadata() {
+        let pkg_create = || {
+            let mut pkg = metadata::PackageMetadata::new("test-id");
+            pkg.set_license(pkg_license::LicenseType::Expression("MIT".to_owned()));
+            pkg
+        };
+        let pkg = PackageData {
+            metadata: pkg_create(),
+        };
 
-        let result = pkg.validate_data();
+        let actual = pkg.metadata();
 
-        assert_eq!(result.len(), 1);
-    }
-
-    #[test]
-    fn validate_should_not_create_message_on_valid_data() {
-        let pkg = PackageData::new("some-id");
-
-        let result = pkg.validate_data();
-
-        assert_eq!(result.len(), 0);
+        assert_eq!(actual, &pkg_create());
     }
 }

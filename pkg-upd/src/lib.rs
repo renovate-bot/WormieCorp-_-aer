@@ -12,5 +12,4 @@
     issue_tracker_base_url = "https://github.com/WormieCorp/pkg-upd/issues/"
 )]
 
-pub mod package;
 pub mod parsers;
