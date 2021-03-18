@@ -267,6 +267,17 @@ mod tests {
                     skip_end: 1,
                 });
                 choco.version = semver::Version::new(3, 1, 0);
+                choco.set_title("Artistic Style");
+                choco.set_copyright("Copyright (c) 2014 Jim Pattee, Tal Dividson");
+                choco.require_license_acceptance = false;
+                choco.documentation_url =
+                    Some(Url::parse("http://astyle.sourceforge.net/astyle.html").unwrap());
+                choco.issues_url =
+                    Some(Url::parse("https://sourceforge.net/p/astyle/bugs").unwrap());
+                choco.set_tags(&["astyle", "beautifier", "command-only", "development"]);
+                choco.set_release_notes("[Software Changelog](http://astyle.sourceforge.net/notes.html)
+[Package Changelog](https://github.com/AdmiringWorm/chocolatey-packages/blob/master/automatic/astyle/Changelog.md)");
+                choco.add_dependencies("chocolatey-core.extension", "1.3.3");
                 choco
             });
 

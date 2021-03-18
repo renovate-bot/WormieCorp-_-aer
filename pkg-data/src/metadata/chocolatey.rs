@@ -5,10 +5,12 @@
 //! Variables that are common between different packages managers are located in
 //! the default package data section.
 
+use std::collections::HashMap;
 use std::fmt::Display;
 
 use semver::Version;
 use serde::{Deserialize, Serialize};
+use url::Url;
 
 use crate::prelude::Description;
 
@@ -45,6 +47,12 @@ pub struct ChocolateyMetadata {
     #[serde(default = "crate::defaults::boolean_true")]
     lowercase_id: bool,
 
+    /// The title of the software.
+    pub title: Option<String>,
+
+    /// The copyright of the software
+    pub copyright: Option<String>,
+
     /// The version of the Chocolatey package, can be automatically updated and
     /// is not necessary to initially be set.
     #[serde(default = "crate::defaults::empty_version")]
@@ -56,6 +64,25 @@ pub struct ChocolateyMetadata {
 
     /// The description of the software.
     pub description: Description,
+
+    /// Wether the license of the software requires users to accept the license.
+    #[serde(default = "crate::defaults::boolean_true")]
+    pub require_license_acceptance: bool,
+
+    /// The url to the documentation of the software.
+    pub documentation_url: Option<Url>,
+
+    /// The url to where bugs or features to the software should be reported.
+    pub issues_url: Option<Url>,
+
+    #[serde(default)]
+    tags: Vec<String>,
+
+    #[serde(default)]
+    release_notes: Option<String>,
+
+    #[serde(default)]
+    dependencies: HashMap<String, Version>,
 }
 
 impl ChocolateyMetadata {
@@ -63,9 +90,17 @@ impl ChocolateyMetadata {
     pub fn new() -> ChocolateyMetadata {
         ChocolateyMetadata {
             lowercase_id: crate::defaults::boolean_true(),
+            title: None,
+            copyright: None,
             version: crate::defaults::empty_version(),
             authors: vec![],
             description: Description::None,
+            require_license_acceptance: true,
+            documentation_url: None,
+            issues_url: None,
+            tags: vec![],
+            release_notes: None,
+            dependencies: HashMap::new(),
         }
     }
 
@@ -93,6 +128,55 @@ impl ChocolateyMetadata {
 
     pub fn set_description_str(&mut self, description: &str) {
         self.set_description(Description::Text(description.into()));
+    }
+
+    pub fn set_title(&mut self, title: &str) {
+        if let Some(ref mut self_title) = self.title {
+            self_title.clear();
+            self_title.push_str(title);
+        } else {
+            self.title = Some(title.into());
+        }
+    }
+
+    pub fn set_copyright(&mut self, copyright: &str) {
+        if let Some(ref mut self_copyright) = self.copyright {
+            self_copyright.clear();
+            self_copyright.push_str(copyright);
+        } else {
+            self.copyright = Some(copyright.into());
+        }
+    }
+
+    pub fn set_release_notes(&mut self, release_notes: &str) {
+        if let Some(ref mut self_release_notes) = self.release_notes {
+            self_release_notes.clear();
+            self_release_notes.push_str(release_notes);
+        } else {
+            self.release_notes = Some(release_notes.into());
+        }
+    }
+
+    pub fn add_dependencies(&mut self, id: &str, version: &str) {
+        self.dependencies
+            .insert(id.into(), Version::parse(version).unwrap());
+    }
+
+    pub fn set_dependencies(&mut self, dependencies: HashMap<String, Version>) {
+        self.dependencies = dependencies;
+    }
+
+    pub fn set_tags<T>(&mut self, tags: &[T]) -> &Self
+    where
+        T: Display,
+    {
+        self.tags.clear();
+
+        for tag in tags.iter() {
+            self.tags.push(tag.to_string());
+        }
+
+        self
     }
 
     /// Allows initializing and setting the Chocolatey metadata structure with
@@ -133,9 +217,17 @@ mod tests {
     fn new_should_create_with_expected_values() {
         let expected = ChocolateyMetadata {
             lowercase_id: true,
+            title: None,
+            copyright: None,
             version: crate::defaults::empty_version(),
             authors: vec![],
             description: Description::None,
+            require_license_acceptance: true,
+            documentation_url: None,
+            issues_url: None,
+            tags: vec![],
+            release_notes: None,
+            dependencies: HashMap::new(),
         };
 
         let actual = ChocolateyMetadata::new();
@@ -147,9 +239,17 @@ mod tests {
     fn default_should_create_with_expected_values() {
         let expected = ChocolateyMetadata {
             lowercase_id: true,
+            title: None,
+            copyright: None,
             version: crate::defaults::empty_version(),
             authors: vec![],
             description: Description::None,
+            require_license_acceptance: true,
+            documentation_url: None,
+            issues_url: None,
+            tags: vec![],
+            release_notes: None,
+            dependencies: HashMap::new(),
         };
 
         let actual = ChocolateyMetadata::default();

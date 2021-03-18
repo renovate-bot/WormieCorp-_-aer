@@ -11,14 +11,12 @@ title = "Artistic Style"
 version = "3.1.0"
 authors = ["Jim Pattee", "Tal Davidson"]
 copyright = "Copyright (c) 2014 Jim Pattee, Tal Dividson"
-requireLicenseAcceptance = false
+require_license_acceptance = false
 documentation_url = "http://astyle.sourceforge.net/astyle.html"
-issues_url = "https://sourceforge/net/p/astyle/bugs"
+issues_url = "https://sourceforge.net/p/astyle/bugs"
 tags = ["astyle", "beautifier", "command-only", "development"]
-release_notes = '''\
-[Software Changelog](http://astyle.sourceforge.net/notes.html)
-[Package Changelog](https://github.com/AdmiringWorm/chocolatey-packages/blob/master/automatic/astyle/Changelog.md)
-'''
+release_notes = '''[Software Changelog](http://astyle.sourceforge.net/notes.html)
+[Package Changelog](https://github.com/AdmiringWorm/chocolatey-packages/blob/master/automatic/astyle/Changelog.md)'''
 description = { from = "./astyle.md", skip_start = 2, skip_end = 1 }
 
 [metadata.chocolatey.dependencies]
