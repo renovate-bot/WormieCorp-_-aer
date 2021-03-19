@@ -31,6 +31,7 @@
 mod defaults;
 pub mod metadata;
 pub mod prelude;
+pub mod updater;
 
 use serde::{Deserialize, Serialize};
 
@@ -41,6 +42,9 @@ use serde::{Deserialize, Serialize};
 pub struct PackageData {
     /// The metadata that will be part of any package that gets created.
     metadata: metadata::PackageMetadata,
+
+    #[serde(default)]
+    updater: updater::PackageUpdateData,
 }
 
 impl PackageData {
@@ -48,6 +52,7 @@ impl PackageData {
     pub fn new(id: &str) -> PackageData {
         PackageData {
             metadata: metadata::PackageMetadata::new(id),
+            updater: updater::PackageUpdateData::new(),
         }
     }
 
@@ -59,6 +64,14 @@ impl PackageData {
     pub fn metadata_mut(&mut self) -> &mut metadata::PackageMetadata {
         &mut self.metadata
     }
+
+    pub fn updater(&self) -> &updater::PackageUpdateData {
+        &self.updater
+    }
+
+    pub fn updater_mut(&mut self) -> &mut updater::PackageUpdateData {
+        &mut self.updater
+    }
 }
 
 #[cfg(test)]
@@ -69,6 +82,7 @@ mod tests {
     fn new_should_set_expected_values() {
         let expected = PackageData {
             metadata: metadata::PackageMetadata::new("test-id"),
+            updater: updater::PackageUpdateData::new(),
         };
 
         let actual = PackageData::new("test-id");
@@ -85,6 +99,7 @@ mod tests {
         };
         let pkg = PackageData {
             metadata: pkg_create(),
+            updater: updater::PackageUpdateData::new(),
         };
 
         let actual = pkg.metadata();

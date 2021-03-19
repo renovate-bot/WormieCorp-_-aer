@@ -5,4 +5,8 @@ pub use pkg_license::LicenseType;
 
 pub use crate::metadata::chocolatey::ChocolateyMetadata;
 pub use crate::metadata::{Description, PackageMetadata};
+pub use crate::updater::chocolatey::{
+    ChocolateyParseUrl, ChocolateyUpdaterData, ChocolateyUpdaterType,
+};
+pub use crate::updater::PackageUpdateData;
 pub use crate::PackageData;

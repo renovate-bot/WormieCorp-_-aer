@@ -18,7 +18,6 @@ pkg-data = { path = "../pkg-data" }
 pkg-license = { path = "../pkg-license" }
 semver = { version = "0.11.0", features = ["serde"] }
 serde = "1.0.124"
-serde_derive = "1.0.124"
 toml = "0.5.8"
 url = { version = "2.2.1", features = ["serde"] }
 whoami = "1.1.0"

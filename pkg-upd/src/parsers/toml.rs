@@ -285,6 +285,19 @@ mod tests {
                 choco
             });
 
+            pkg.updater_mut().set_chocolatey({
+                let mut choco = ChocolateyUpdaterData::new();
+                choco.embedded = true;
+                choco._type = ChocolateyUpdaterType::Archive;
+                choco.parse_url = Some(ChocolateyParseUrl::UrlWithRegex {
+                    url: Url::parse("https://sourceforge.net/projects/astyle/files/astyle/")
+                        .unwrap(),
+                    regex: r"astyle( |%30)(?P<version>[\d\.]+)/$".into(),
+                });
+                choco.add_regex("arch32", r"windows\.zip/download$");
+                choco
+            });
+
             pkg
         };
 
