@@ -15,7 +15,7 @@
                     "kind": "bin"
                 }
             },
-            "args": [],
+            "args": ["pkg-upd/test-data/ps1/change-summary.ps1"],
             "cwd": "${workspaceFolder}"
         },
         {

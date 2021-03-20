@@ -11,14 +11,21 @@ keywords = ["cli", "package", "packaging", "updater"]
 categories = ["command-line-utilities"]
 publish = false
 
+[features]
+default = ["powershell", "toml_data"]
+toml_data = ["toml", "serde"]
+powershell = ["serde_json", "serde"]
+
 [dependencies]
+flexi_logger = "0.17.1"
 lazy_static = "1.4.0"
 log = "0.4.14"
 pkg-data = { path = "../pkg-data" }
 pkg-license = { path = "../pkg-license" }
 semver = { version = "0.11.0", features = ["serde"] }
-serde = "1.0.124"
-toml = "0.5.8"
+serde = { version = "1.0.124", optional = true }
+serde_json = { version = "1.0.64", optional = true }
+toml = { version = "0.5.8", optional = true }
 url = { version = "2.2.1", features = ["serde"] }
 whoami = "1.1.0"
 
