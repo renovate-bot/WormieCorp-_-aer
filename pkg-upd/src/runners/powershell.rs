@@ -136,7 +136,10 @@ impl ScriptRunner for PowershellRunner {
             }
 
             if fail {
-                return Err("An exception occurred when running the PowerShell script!".into());
+                return Err(format!(
+                    "An exception occurred when running the PowerShell script!\n{}",
+                    stderr
+                ));
             }
         }
 
@@ -202,17 +205,13 @@ mod tests {
     }
 
     #[test]
+    #[should_panic(expected = "An exception occurred when running the PowerShell script!")]
     fn run_should_return_error_when_file_is_directory() {
         let runner = PowershellRunner;
         let dir = PathBuf::from("src");
         let mut data = PackageData::new("test");
 
-        let result = runner.run(&PathBuf::from("."), dir, &mut data);
-
-        assert_eq!(
-            result,
-            Err("An exception occurred when running the PowerShell script!".into())
-        );
+        let _ = runner.run(&PathBuf::from("."), dir, &mut data).unwrap();
     }
 
     #[rstest(name, case("empty-run.ps1"), case("empty-run-with-data.ps1"))]
@@ -325,44 +324,32 @@ mod tests {
     }
 
     #[test]
+    #[should_panic(expected = "An exception occurred when running the PowerShell script!")]
     fn run_should_return_error_when_an_exception_occurrs() {
         let runner = PowershellRunner;
         let path = PathBuf::from("test-data/ps1/with-exception.ps1");
         let mut data = PackageData::new("ansible");
 
-        let result = runner.run(&PathBuf::from("."), path, &mut data);
-
-        assert_eq!(
-            result,
-            Err("An exception occurred when running the PowerShell script!".into())
-        );
+        let _ = runner.run(&PathBuf::from("."), path, &mut data).unwrap();
     }
 
     #[test]
+    #[should_panic(expected = "An exception occurred when running the PowerShell script!")]
     fn run_should_return_error_when_script_exits_with_non_zero_exit_code() {
         let runner = PowershellRunner;
         let path = PathBuf::from("test-data/ps1/exit-code.ps1");
         let mut data = PackageData::new("ansible");
 
-        let result = runner.run(&PathBuf::from("."), path, &mut data);
-
-        assert_eq!(
-            result,
-            Err("An exception occurred when running the PowerShell script!".into())
-        );
+        let _ = runner.run(&PathBuf::from("."), path, &mut data).unwrap();
     }
 
     #[test]
+    #[should_panic(expected = "An exception occurred when running the PowerShell script!")]
     fn run_should_return_error_when_script_is_invalid() {
         let runner = PowershellRunner;
         let path = PathBuf::from("test-data/ps1/invalid-powershell.ps1");
         let mut data = PackageData::new("ansible");
 
-        let result = runner.run(&PathBuf::from("."), path, &mut data);
-
-        assert_eq!(
-            result,
-            Err("An exception occurred when running the PowerShell script!".into())
-        );
+        let _ = runner.run(&PathBuf::from("."), path, &mut data).unwrap();
     }
 }
