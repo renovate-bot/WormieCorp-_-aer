@@ -54,12 +54,24 @@ pub trait ScriptRunner {
     ) -> Result<(), String>;
 }
 
+macro_rules! call_runners {
+    ($work_dir:ident,$script_path:ident,$data:ident,$($runner:expr=>$feature:literal),+) => {
+        let script_path = $script_path.canonicalize().unwrap();
+        let work_dir = $work_dir.canonicalize().unwrap();
+        $(
+            #[cfg(feature = $feature)]
+            if $runner.can_run(&script_path) {
+                return $runner.run(&work_dir, script_path, $data);
+            }
+        )*
+    };
+}
+
 pub fn run_script<T: RunnerCombiner + Debug>(
     work_dir: &Path,
     script_path: PathBuf,
     data: &mut T,
 ) -> Result<(), String> {
-    let work_dir = &work_dir.canonicalize().unwrap();
     if !work_dir.exists() {
         if let Err(err) = std::fs::create_dir_all(work_dir) {
             let msg = format!("Failed to create work directory: '{}'", err);
@@ -74,18 +86,12 @@ pub fn run_script<T: RunnerCombiner + Debug>(
         ));
     }
 
-    let runners = [
-        #[cfg(feature = "powershell")]
-        powershell::PowershellRunner,
-    ];
-
-    let script_path = script_path.canonicalize().unwrap();
-
-    for runner in runners.iter() {
-        if runner.can_run(&script_path) {
-            return runner.run(&work_dir, script_path, data);
-        }
-    }
+    call_runners!(
+        work_dir,
+        script_path,
+        data,
+        powershell::PowershellRunner => "powershell"
+    );
 
     Err(format!(
         "No supported runner was found for '{}'",

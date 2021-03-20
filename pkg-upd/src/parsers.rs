@@ -9,6 +9,7 @@ use log::warn;
 use pkg_data::prelude::*;
 
 pub mod errors;
+#[cfg(feature = "toml_data")]
 pub mod toml;
 
 /// Parsers implementing this trait are able to read and transform a specific
@@ -53,17 +54,24 @@ pub trait DataReader {
     fn read_data<T: Read>(&self, reader: &mut T) -> Result<PackageData, errors::ParserError>;
 }
 
-pub fn read_file(path: &Path) -> Result<PackageData, errors::ParserError> {
-    let parsers = [toml::TomlParser];
+macro_rules! call_parsers {
+    ($path:ident,$($parser:expr=>$feature:literal),+) => {
+        $(
+            #[cfg(feature = $feature)]
+            {
+                let data = $parser.read_file($path);
+                if let Ok(data) = data {
+                    return Ok(data);
+                } else if $parser.can_handle_file($path) {
+                    return data;
+                }
+            }
+        )*
+    };
+}
 
-    for parser in &parsers {
-        let data = parser.read_file(path);
-        if let Ok(data) = data {
-            return Ok(data);
-        } else if parser.can_handle_file(path) {
-            return data;
-        }
-    }
+pub fn read_file(path: &Path) -> Result<PackageData, errors::ParserError> {
+    call_parsers!(path, toml::TomlParser => "toml_data");
 
     Err(errors::ParserError::NoParsers(path.to_owned()))
 }
