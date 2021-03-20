@@ -79,6 +79,13 @@ pub fn run_script<T: RunnerCombiner + Debug>(
             return Err(msg);
         }
     }
+
+    let work_dir = &if work_dir.is_absolute() {
+        work_dir.to_path_buf()
+    } else {
+        work_dir.canonicalize().unwrap()
+    };
+
     if !work_dir.is_dir() {
         return Err(format!(
             "The specified directory '{}' is not a directory!",
@@ -189,4 +196,142 @@ fn get_license(values: RunnerData) -> LicenseType {
     }
 
     license
+}
+
+#[cfg(test)]
+mod tests {
+    use std::fs::{create_dir_all, File};
+    use std::io::{BufWriter, Write};
+
+    use super::*;
+
+    fn write_file(content: &[u8], file_path: &Path) {
+        if let Some(parent) = file_path.parent() {
+            create_dir_all(parent).unwrap();
+        }
+        let file = File::create(PathBuf::from(file_path)).unwrap();
+        let mut writer = BufWriter::new(file);
+
+        writer.write_all(content).unwrap();
+    }
+
+    #[test]
+    fn get_license_should_get_license_expression() {
+        let mut data = RunnerData::new();
+        data.insert("expr", "GPL-3.0");
+
+        let result = get_license(data);
+
+        assert_eq!(result, LicenseType::Expression("GPL-3.0".into()));
+    }
+
+    #[test]
+    fn get_license_should_get_license_url() {
+        const EXPECTED: &str = "https://opensource.org/licenses/MIT";
+        let mut data = RunnerData::new();
+        data.insert("url", EXPECTED);
+
+        let result = get_license(data);
+
+        assert_eq!(result, LicenseType::Location(Url::parse(EXPECTED).unwrap()));
+    }
+
+    #[test]
+    fn get_license_should_get_license_expression_and_url() {
+        const EXPECTED_EXPR: &str = "Apache-2.0";
+        const EXPECTED_URL: &str = "https://opensource.org/licenses/Apache-2.0";
+        let mut data = RunnerData::new();
+        data.insert("url", EXPECTED_URL);
+        data.insert("expr", EXPECTED_EXPR);
+
+        let result = get_license(data);
+
+        assert_eq!(
+            result,
+            LicenseType::ExpressionAndLocation {
+                expression: EXPECTED_EXPR.into(),
+                url: Url::parse(EXPECTED_URL).unwrap()
+            }
+        );
+    }
+
+    #[test]
+    fn get_license_should_return_no_license_on_invalid_data() {
+        let mut data = RunnerData::new();
+        data.insert("project", "some project");
+        let result = get_license(data);
+
+        assert_eq!(result, LicenseType::None);
+    }
+
+    #[test]
+    fn run_script_should_run_powershell_scripts() {
+        const SCRIPT: &[u8] = b"param($data)
+        Write-Host \"Hello world\"";
+        let file_path = PathBuf::from("./test-files/test-path.ps1");
+        write_file(SCRIPT, &file_path);
+
+        let result = run_script(
+            &PathBuf::from("."),
+            PathBuf::from(file_path),
+            &mut PackageData::new("test-package"),
+        );
+
+        assert_eq!(result, Ok(()))
+    }
+
+    #[test]
+    fn run_script_should_return_error_on_unknown_script() {
+        let file_path = PathBuf::from("./test-files/test-path.qs");
+        write_file(b"Test", &file_path);
+
+        let result = run_script(
+            &PathBuf::from(".").canonicalize().unwrap(),
+            file_path.clone(),
+            &mut PackageData::new("test-package"),
+        );
+
+        assert_eq!(
+            result,
+            Err(format!(
+                "No supported runner was found for '{}'",
+                file_path.display()
+            ))
+        );
+    }
+
+    #[test]
+    fn run_script_should_return_error_when_work_dir_is_a_file() {
+        let work_dir = PathBuf::from("Cargo.toml");
+        let result = run_script(
+            &work_dir,
+            PathBuf::from("test"),
+            &mut PackageData::new("test-data"),
+        );
+
+        assert_eq!(
+            result,
+            Err(format!(
+                "The specified directory '{}' is not a directory!",
+                work_dir.canonicalize().unwrap().display()
+            ))
+        );
+    }
+
+    #[test]
+    fn run_script_should_create_work_directory_if_not_exists() {
+        let path = PathBuf::from("test-files/work_dir");
+
+        if path.exists() {
+            let _ = std::fs::remove_dir(&path);
+        }
+
+        let _ = run_script(
+            &path,
+            PathBuf::from("Cargo.toml"),
+            &mut PackageData::new("test-package"),
+        );
+
+        assert!(path.exists());
+    }
 }

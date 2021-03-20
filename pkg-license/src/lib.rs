@@ -51,7 +51,7 @@ impl LicenseType {
                 Some(url.as_str())
             }
             LicenseType::Expression(expression) => {
-                let resolved = license::from_id(&expression);
+                let resolved = license::from_id_exception(&expression);
                 if let Some(license) = resolved {
                     if !license.see_also().is_empty() {
                         return Some(license.see_also()[0]);
@@ -63,7 +63,7 @@ impl LicenseType {
                         return Some(license.see_also()[0]);
                     }
                 }
-                let resolved = license::from_id_exception(&expression);
+                let resolved = license::from_id(&expression);
                 if let Some(license) = resolved {
                     if !license.see_also().is_empty() {
                         return Some(license.see_also()[0]);
@@ -153,7 +153,16 @@ mod tests {
         case("MIT", "https://opensource.org/licenses/MIT"),
         case("MPL-2.0", "http://www.mozilla.org/MPL/2.0/"),
         case("CDDL-1.0", "https://opensource.org/licenses/cddl1"),
-        case("EPL-2.0", "https://www.eclipse.org/legal/epl-2.0")
+        case("EPL-2.0", "https://www.eclipse.org/legal/epl-2.0"),
+        case("GPL-3.0+", "https://www.gnu.org/licenses/gpl-3.0-standalone.html"),
+        case(
+            "BSD-3-Clause-No-Nuclear-License-2014",
+            "https://java.net/projects/javaeetutorial/pages/BerkeleyLicense"
+        ),
+        case(
+            "GCC-exception-3.1",
+            "http://www.gnu.org/licenses/gcc-exception-3.1.html"
+        )
     )]
     fn license_url_should_return_correct_license_url_for_expression(expression: &str, url: &str) {
         let license = LicenseType::Expression(expression.into());
