@@ -1,0 +1,52 @@
+name: Build Porject
+
+on:
+  push:
+    branches: [master, develop]
+    tags-ignore:
+      - "*"
+  pull_request:
+    branches: [master, develop]
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest] # Once public, windows and mac should be tested
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install latest stable
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          default: true
+          profile: minimal
+
+      - name: Build projects with all features
+        uses: actions-rs/cargo@v1
+        with:
+          command: build
+          args: --release --all-features
+
+  tests:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest] # Once public, windows and mac should be tested
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install-latest stable
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          default: true
+          profile: minimal
+
+      - name: Test projects with all features
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --release --all-features
