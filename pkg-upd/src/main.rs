@@ -7,11 +7,13 @@ extern crate pkg_upd;
 use std::path::PathBuf;
 use std::str::FromStr;
 
+use human_panic::setup_panic;
 use log::info;
 use pkg_upd::logging;
 use pkg_upd::runners::run_script;
 
 fn main() {
+    setup_panic!();
     {
         let log_path = concat!(env!("CARGO_PKG_NAME"), ".log");
         let filter = if cfg!(debug_assertions) {
@@ -20,7 +22,8 @@ fn main() {
             log::LevelFilter::Info
         };
 
-        logging::setup_logging(&filter, log_path).unwrap();
+        logging::setup_logging(&filter, log_path)
+            .expect("Unable to configure logging of the application!");
     }
 
     let data = pkg_upd::parsers::read_file(
