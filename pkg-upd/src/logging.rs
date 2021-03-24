@@ -1,7 +1,9 @@
 // Copyright (c) 2021 Kim J. Nordmo and WormieCorp.
 // Licensed under the MIT license. See LICENSE.txt file in the project
+use std::path::PathBuf;
 
 use log::{debug, Level, LevelFilter};
+use structopt::StructOpt;
 use yansi::{Color, Paint, Style};
 
 #[derive(Copy, Clone)]
@@ -11,6 +13,31 @@ struct Colors {
     info: Style,
     warn: Style,
     error: Style,
+}
+
+#[derive(StructOpt)]
+pub struct LogData {
+    /// The path to where verbose logs should be written.
+    #[structopt(
+        long = "log",
+        alias = "log-file",
+        env = "PKG_LOG_PATH",
+        global = true,
+        parse(from_os_str),
+        default_value = concat!("./", env!("CARGO_PKG_NAME"), ".log")
+    )]
+    pub path: PathBuf,
+
+    /// The log level to use when outputting to the console.
+    #[structopt(
+        short = "-L",
+        long = "log-level",
+        env = "PKG_LOG_LEVEL",
+        global = true,
+        default_value = "info",
+        possible_values = &["trace", "debug", "info", "error"]
+    )]
+    pub level: LevelFilter,
 }
 
 impl Colors {
@@ -35,10 +62,7 @@ impl Colors {
     }
 }
 
-pub fn setup_logging(
-    log_level: &LevelFilter,
-    log_path: &str,
-) -> Result<(), Box<dyn std::error::Error>> {
+pub fn setup_logging(log: &LogData) -> Result<(), Box<dyn std::error::Error>> {
     let colors = Colors {
         trace: Style::new(Color::Black),
         debug: Style::new(Color::Fixed(7)),
@@ -46,7 +70,7 @@ pub fn setup_logging(
         warn: Style::new(Color::Fixed(208)).bold(),
         error: Style::new(Color::Fixed(196)).bold(),
     };
-    let cli_info = if log_level > &log::LevelFilter::Info {
+    let cli_info = if log.level > log::LevelFilter::Info {
         fern::Dispatch::new().format(move |out, message, record| {
             let level = record.level();
             out.finish(format_args!(
@@ -61,7 +85,7 @@ pub fn setup_logging(
         })
     }
     .filter(move |metadata| metadata.level() >= log::Level::Info)
-    .level(*log_level)
+    .level(log.level)
     .chain(std::io::stdout());
     let cli_warn = fern::Dispatch::new()
         .format(move |out, message, record| {
@@ -73,7 +97,7 @@ pub fn setup_logging(
             ));
         })
         .filter(move |metadata| metadata.level() <= log::Level::Warn)
-        .level(*log_level)
+        .level(log.level)
         .chain(std::io::stderr());
 
     let file_log = fern::Dispatch::new()
@@ -98,7 +122,7 @@ pub fn setup_logging(
             }
         })
         .level(log::LevelFilter::Trace)
-        .chain(fern::log_file(log_path)?);
+        .chain(fern::log_file(&log.path)?);
 
     fern::Dispatch::new()
         .chain(cli_info)

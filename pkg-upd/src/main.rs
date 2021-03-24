@@ -5,39 +5,52 @@
 extern crate pkg_upd;
 
 use std::path::PathBuf;
-use std::str::FromStr;
 
 use human_panic::setup_panic;
-use log::info;
+use log::{error, info};
 use pkg_upd::logging;
-use pkg_upd::runners::run_script;
+use structopt::StructOpt;
+
+#[derive(StructOpt)]
+#[structopt(author = "AdmiringWorm <kim.nordmo@gmail.com>")]
+struct Arguments {
+    /// The files containing the necessary data (metadata+updater data) that
+    /// should be used during the run.
+    #[structopt(name = "PKG_FILE", required = true, parse(from_os_str))]
+    package_files: Vec<PathBuf>,
+
+    #[structopt(flatten)]
+    log: pkg_upd::logging::LogData,
+}
 
 fn main() {
     setup_panic!();
-    {
-        let log_path = concat!(env!("CARGO_PKG_NAME"), ".log");
-        let filter = if cfg!(debug_assertions) {
-            log::LevelFilter::Trace
-        } else {
-            log::LevelFilter::Info
+    let arguments = Arguments::from_args();
+    logging::setup_logging(&arguments.log)
+        .expect("Unable to configure logging of the application!");
+
+    for file in arguments.package_files {
+        let data = match pkg_upd::parsers::read_file(&file) {
+            Ok(data) => data,
+            Err(error) => {
+                error!("Error reading package file: {}", error);
+                continue;
+            }
         };
 
-        logging::setup_logging(&filter, log_path)
-            .expect("Unable to configure logging of the application!");
-    }
+        info!(
+            "Should continue with updating package: {}",
+            data.metadata().id()
+        );
 
-    let data = pkg_upd::parsers::read_file(
-        &PathBuf::from_str("./pkg-upd/test-data/deserialize-full.pkg.toml").unwrap(),
-    );
-    let mut data = data.unwrap();
+        // let file = data.updater().chocolatey().unwrap().
 
-    let file = std::env::args().nth(1);
+        // if let Some(ref file) = file {
+        //     let cwd = std::env::current_dir().unwrap();
 
-    if let Some(ref file) = file {
-        let cwd = std::env::current_dir().unwrap();
-
-        let data = run_script(&cwd, PathBuf::from_str(file).unwrap(), &mut data);
-        info!("{:?}", data);
+        //     let data = run_script(&cwd, PathBuf::from_str(file).unwrap(),
+        // &mut data);     info!("{:?}", data);
+        // }
     }
 
     info!("Hello, world!");

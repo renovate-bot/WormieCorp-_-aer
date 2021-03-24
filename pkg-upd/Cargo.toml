@@ -27,6 +27,7 @@ pkg-license = { path = "../pkg-license" }
 semver = { version = "0.11.0", features = ["serde"] }
 serde = { version = "1.0.124", optional = true }
 serde_json = { version = "1.0.64", optional = true }
+structopt = "0.3.21"
 toml = { version = "0.5.8", optional = true }
 url = { version = "2.2.1", features = ["serde"] }
 whoami = "1.1.0"

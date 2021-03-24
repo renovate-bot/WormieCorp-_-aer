@@ -15,7 +15,11 @@
                     "kind": "bin"
                 }
             },
-            "args": ["pkg-upd/test-data/ps1/change-summary.ps1"],
+            "args": [
+                "pkg-upd/test-data/deserialize-full.pkg.toml",
+                "--log-level",
+                "trace"
+            ],
             "cwd": "${workspaceFolder}"
         },
         {
