@@ -12,5 +12,6 @@
     issue_tracker_base_url = "https://github.com/WormieCorp/pkg-upd/issues/"
 )]
 
+pub mod logging;
 pub mod parsers;
 pub mod runners;

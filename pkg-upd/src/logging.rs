@@ -1,0 +1,112 @@
+// Copyright (c) 2021 Kim J. Nordmo and WormieCorp.
+// Licensed under the MIT license. See LICENSE.txt file in the project
+
+use log::{debug, Level, LevelFilter};
+use yansi::{Color, Paint, Style};
+
+#[derive(Copy, Clone)]
+struct Colors {
+    trace: Style,
+    debug: Style,
+    info: Style,
+    warn: Style,
+    error: Style,
+}
+
+impl Colors {
+    fn from_level(&self, level: &Level) -> &Style {
+        match level {
+            Level::Trace => &self.trace,
+            Level::Debug => &self.debug,
+            Level::Warn => &self.warn,
+            Level::Error => &self.error,
+            _ => &self.info,
+        }
+    }
+
+    fn paint<T>(&self, level: &Level, value: T) -> Paint<T> {
+        let style = self.from_level(level);
+
+        style.paint(value)
+    }
+
+    fn paint_level(&self, level: Level) -> Paint<Level> {
+        self.paint(&level, level)
+    }
+}
+
+pub fn setup_logging(
+    log_level: &LevelFilter,
+    log_path: &str,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let colors = Colors {
+        trace: Style::new(Color::Black),
+        debug: Style::new(Color::Fixed(7)),
+        info: Style::new(Color::Unset),
+        warn: Style::new(Color::Fixed(208)).bold(),
+        error: Style::new(Color::Fixed(196)).bold(),
+    };
+    let cli_info = if log_level > &log::LevelFilter::Info {
+        fern::Dispatch::new().format(move |out, message, record| {
+            let level = record.level();
+            out.finish(format_args!(
+                "[{}]: {}",
+                colors.paint_level(level),
+                colors.paint(&level, message)
+            ));
+        })
+    } else {
+        fern::Dispatch::new().format(move |out, message, record| {
+            out.finish(format_args!("{}", colors.paint(&record.level(), message)));
+        })
+    }
+    .filter(move |metadata| metadata.level() >= log::Level::Info)
+    .level(*log_level)
+    .chain(std::io::stdout());
+    let cli_warn = fern::Dispatch::new()
+        .format(move |out, message, record| {
+            let level = record.level();
+            out.finish(format_args!(
+                "[{}]: {}",
+                colors.paint_level(level),
+                colors.paint(&level, message)
+            ));
+        })
+        .filter(move |metadata| metadata.level() <= log::Level::Warn)
+        .level(*log_level)
+        .chain(std::io::stderr());
+
+    let file_log = fern::Dispatch::new()
+        .format(move |out, message, record| {
+            let enabled = Paint::is_enabled();
+            if enabled {
+                Paint::disable();
+            }
+
+            out.finish(format_args!(
+                "[{}] {} T[{:?}] [{}] {}:{}: {}",
+                chrono::Local::now().format("%Y-%m-%d %H:%M:%S%.6f %:z"),
+                record.level(),
+                std::thread::current().name().unwrap_or("<unnamed>"),
+                record.module_path().unwrap_or("<unnamed>"),
+                record.file().unwrap_or("<unnamed>"),
+                record.line().unwrap_or(0),
+                message
+            ));
+            if enabled {
+                Paint::enable();
+            }
+        })
+        .level(log::LevelFilter::Trace)
+        .chain(fern::log_file(log_path)?);
+
+    fern::Dispatch::new()
+        .chain(cli_info)
+        .chain(cli_warn)
+        .chain(file_log)
+        .apply()?;
+
+    debug!("Finished configuring logging");
+
+    Ok(())
+}

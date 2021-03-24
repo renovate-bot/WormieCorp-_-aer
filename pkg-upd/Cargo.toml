@@ -17,7 +17,8 @@ toml_data = ["toml", "serde"]
 powershell = ["serde_json", "serde"]
 
 [dependencies]
-flexi_logger = "0.17.1"
+chrono = "0.4.19"
+fern = { version = "0.6.0", features = ["date-based"] }
 lazy_static = "1.4.0"
 log = "0.4.14"
 pkg-data = { path = "../pkg-data" }
@@ -28,6 +29,7 @@ serde_json = { version = "1.0.64", optional = true }
 toml = { version = "0.5.8", optional = true }
 url = { version = "2.2.1", features = ["serde"] }
 whoami = "1.1.0"
+yansi = "0.5.0"
 
 [dev-dependencies]
 rstest = "0.6.4"
