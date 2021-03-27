@@ -23,12 +23,21 @@ jobs:
           toolchain: stable
           default: true
           profile: minimal
-
+      - uses: Swatinem/rust-cache@v1
+        with:
+          key: ${{ matrix.os }}-deps-${{ hashFiles('Cargo.lock') }}
       - name: Build projects with all features
         uses: actions-rs/cargo@v1
         with:
           command: build
           args: --release --all-features --locked
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{ matrix.os }}
+          path: |
+            target/release/pkg-upd
+            target/release/pkg-upd.exe
 
   tests:
     runs-on: ${{ matrix.os }}
@@ -44,7 +53,9 @@ jobs:
           toolchain: stable
           default: true
           profile: minimal
-
+      - uses: Swatinem/rust-cache@v1
+        with:
+          key: ${{ matrix.os }}-deps-${{ hashFiles('Cargo.lock') }}
       - name: Test projects with all features
         uses: actions-rs/cargo@v1
         with:
