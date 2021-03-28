@@ -33,4 +33,4 @@ test_script:
 
       cargo test --release --all-features --locked
 artifacts:
-  - path: target/release/pkg-upd.exe
+  - path: target/release/*.exe
