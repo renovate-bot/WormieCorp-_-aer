@@ -8,8 +8,10 @@ use std::path::PathBuf;
 
 use human_panic::setup_panic;
 use log::{error, info};
-use pkg_upd::logging;
+use pkg_upd::{log_data, logging};
 use structopt::StructOpt;
+
+log_data! {env!("CARGO_PKG_NAME")}
 
 #[derive(StructOpt)]
 #[structopt(author = "AdmiringWorm <kim.nordmo@gmail.com>")]
@@ -20,11 +22,15 @@ struct Arguments {
     package_files: Vec<PathBuf>,
 
     #[structopt(flatten)]
-    log: pkg_upd::logging::LogData,
+    log: LogData,
 }
 
 fn main() {
     setup_panic!();
+    if cfg!(windows) && !yansi::Paint::enable_windows_ascii() {
+        yansi::Paint::disable();
+    }
+
     let arguments = Arguments::from_args();
     logging::setup_logging(&arguments.log)
         .expect("Unable to configure logging of the application!");

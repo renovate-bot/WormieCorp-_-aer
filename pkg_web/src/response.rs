@@ -4,15 +4,22 @@
 //! Holds all supported types of response types, that can be used when creating
 //! a package.
 
+/// Contains code related to handling binary responses (normally downloading).
+mod binary;
 /// Contains code related to handling html responses.
 mod html;
 
 use std::collections::HashMap;
+use std::path::Path;
 
+pub use binary::BinaryResponse;
 pub use html::HtmlResponse;
 use lazy_static::lazy_static;
 use reqwest::blocking::Response;
 use reqwest::StatusCode;
+
+use crate::elements::LinkType;
+use crate::errors::WebError;
 
 lazy_static! {
     static ref MIME_TYPES: HashMap<&'static str, LinkType> = {
@@ -27,7 +34,57 @@ lazy_static! {
     };
 }
 
-use crate::elements::LinkType;
+/// A simple enumerator that holds information of wether the response returned
+/// by a server said the content is up to date, or if there is new content
+/// available.
+///
+/// ## Notes
+///
+/// - Calling any child response may panic if a function is called, and the
+///   server returned an not modified response.
+#[derive(Debug, PartialEq)]
+pub enum ResponseType<T: WebResponse> {
+    /// The response returned by the server was considered up to date, and no
+    /// further processing is available. Sets the server status code as a
+    /// member.
+    Updated(u16),
+    /// The response returned by the server is considered to be outdated and
+    /// additional processing is necessary. Sets the type of the web
+    /// response that can be used for further processing, and the status code
+    /// returned by the server.
+    New(T, u16),
+}
+
+/// Implements common functions that are also implemented on any child response.
+impl<T: WebResponse> ResponseType<T> {
+    /// Calls the read function on the underlying web response.
+    ///
+    /// ## Warning
+    ///
+    /// - Will panic if the response set is considered to be up to date.
+    pub fn read(self, option: Option<&str>) -> Result<T::ResponseContent, WebError> {
+        match self {
+            ResponseType::Updated(status) => panic!(
+                "Can not read an already updated response. Status Code: {}",
+                status
+            ),
+            ResponseType::New(item, _) => item.read(option),
+        }
+    }
+}
+
+/// Implements functions that only makes sense to be called when the response
+/// type is a binary response.
+impl ResponseType<BinaryResponse> {
+    /// Sets the directory that should be used when calling the child response.
+    /// This function should not panic even if the response is considered up to
+    /// date.
+    pub fn set_work_dir(&mut self, path: &Path) {
+        if let ResponseType::New(item, _) = self {
+            item.set_work_dir(path)
+        }
+    }
+}
 
 /// Common trait to allow multiple response types to have the same functions to
 /// be used.
@@ -38,6 +95,8 @@ use crate::elements::LinkType;
 ///
 /// - [HtmlResponse](HtmlResponse): _Responsible of parsing html sites,
 ///   generally for aquiring links on a web page_.
+/// - [BinaryResponse](BinaryResponse): _Responsible for downloading a remote
+///   file to a specified location_
 pub trait WebResponse {
     /// The response content that will be returned by any implementation of
     /// [WebResponse]. This can be anything that would be expected by the
@@ -73,7 +132,7 @@ pub trait WebResponse {
     /// structure holding the necessary items found. This may return an
     /// error if the status code is a success code, or if the reading of the
     /// content failed.
-    fn read(self, re: Option<&str>) -> Result<Self::ResponseContent, Box<dyn std::error::Error>>;
+    fn read(self, re: Option<&str>) -> Result<Self::ResponseContent, WebError>;
 }
 
 #[cfg(test)]
@@ -102,10 +161,7 @@ mod tests {
         fn read(
             self,
             _: Option<&str>,
-        ) -> std::result::Result<
-            <Self as WebResponse>::ResponseContent,
-            std::boxed::Box<(dyn std::error::Error + 'static)>,
-        > {
+        ) -> std::result::Result<<Self as WebResponse>::ResponseContent, WebError> {
             unimplemented!()
         }
     }

@@ -8,7 +8,7 @@ use reqwest::{header, Url};
 use select::document::Document;
 use select::predicate::Name;
 
-use crate::response::MIME_TYPES;
+use crate::response::{WebError, MIME_TYPES};
 use crate::{LinkElement, LinkType, WebResponse};
 
 /// Contains functions and structure for holding a single html response, and
@@ -45,20 +45,12 @@ impl WebResponse for HtmlResponse {
     /// itself. This function can return will return an error if the
     /// response do not have a successful status code, or if the reading of the
     /// body fails.
-    fn read(self, re: Option<&str>) -> Result<Self::ResponseContent, Box<dyn std::error::Error>> {
-        {
-            let response = &self.response;
-            if !response.status().is_success() {
-                let response = self.response;
-                response.error_for_status()?;
-                unreachable!();
-            }
-        }
+    fn read(self, re: Option<&str>) -> Result<Self::ResponseContent, WebError> {
         let response_url = self.response.url().clone();
 
         let parent_link = get_parent_link_element(&self);
 
-        let body = self.response.text()?;
+        let body = self.response.text().map_err(WebError::Request)?;
         let links = get_link_elements(body, response_url, re)?;
 
         Ok((parent_link, links))
@@ -85,11 +77,11 @@ fn get_link_elements(
     text: String,
     parent_url: Url,
     re: Option<&str>,
-) -> Result<Vec<LinkElement>, Box<dyn std::error::Error>> {
+) -> Result<Vec<LinkElement>, WebError> {
     let document = Document::from(text.as_str());
 
     let re = if let Some(re) = re {
-        Some(Regex::new(&re)?)
+        Some(Regex::new(&re).map_err(|err| WebError::Other(err.to_string()))?)
     } else {
         None
     };
@@ -291,17 +283,6 @@ mod tests {
         ];
 
         assert_eq!(links, expected_items)
-    }
-
-    #[test]
-    #[should_panic(expected = "Status(500)")]
-    fn read_should_return_error_on_error_response() {
-        let request = WebRequest::create();
-        let response = request.get_html_response("https://httpbin.org/status/500");
-
-        if let Ok(response) = response {
-            let _ = response.read(None).unwrap();
-        }
     }
 
     #[test]

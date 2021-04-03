@@ -1,9 +1,8 @@
 // Copyright (c) 2021 Kim J. Nordmo and WormieCorp.
 // Licensed under the MIT license. See LICENSE.txt file in the project
-use std::path::PathBuf;
+use std::path::Path;
 
 use log::{debug, Level, LevelFilter};
-use structopt::StructOpt;
 use yansi::{Color, Paint, Style};
 
 #[derive(Copy, Clone)]
@@ -15,29 +14,29 @@ struct Colors {
     error: Style,
 }
 
-#[derive(StructOpt)]
-pub struct LogData {
-    /// The path to where verbose logs should be written.
-    #[structopt(
-        long = "log",
-        alias = "log-file",
-        env = "PKG_LOG_PATH",
-        global = true,
-        parse(from_os_str),
-        default_value = concat!("./", env!("CARGO_PKG_NAME"), ".log")
-    )]
-    pub path: PathBuf,
+pub trait LogDataTrait {
+    fn path(&self) -> &Path;
+    fn level(&self) -> &LevelFilter;
+}
 
-    /// The log level to use when outputting to the console.
-    #[structopt(
-        short = "-L",
-        long = "log-level",
-        env = "PKG_LOG_LEVEL",
-        global = true,
-        default_value = "info",
-        possible_values = &["trace", "debug", "info", "error"]
-    )]
-    pub level: LevelFilter,
+#[macro_export]
+macro_rules! log_data {
+    ($app_name:expr) => {
+        #[derive(::structopt::StructOpt)]
+        pub struct LogData {
+            /// The path to where verbose logs should be written.
+            #[structopt(long = "log", alias = "log-file", env = "PKG_LOG_PATH", global = true, parse(from_os_str), default_value = concat!("./", $app_name, ".log") )]
+            pub path: ::std::path::PathBuf,
+            /// The log level to use when outputting to the console.
+            #[structopt(short = "-L", long = "log-level", env = "PKG_LOG_LEVEL", global = true, default_value = "info", possible_values = &["trace", "debug", "info", "error"])]
+            pub level: ::log::LevelFilter,
+        }
+
+        impl ::pkg_upd::logging::LogDataTrait for LogData {
+            fn path(&self) -> &::std::path::Path { &self.path }
+            fn level(&self) -> &::log::LevelFilter { &self.level }
+        }
+    };
 }
 
 impl Colors {
@@ -62,21 +61,27 @@ impl Colors {
     }
 }
 
-pub fn setup_logging(log: &LogData) -> Result<(), Box<dyn std::error::Error>> {
+pub fn setup_logging<T: LogDataTrait>(log: &T) -> Result<(), Box<dyn std::error::Error>> {
     let colors = Colors {
         trace: Style::new(Color::Black),
         debug: Style::new(Color::Fixed(7)),
         info: Style::new(Color::Unset),
         warn: Style::new(Color::Fixed(208)).bold(),
-        error: Style::new(Color::Fixed(196)).bold(),
+        error: Style::new(Color::Red).bold(),
     };
-    let html5ever_level = if log.level > log::LevelFilter::Info {
-        log::LevelFilter::Info
+    let html5ever_level = if log.level() > &log::LevelFilter::Info {
+        &log::LevelFilter::Info
     } else {
-        log.level
+        log.level()
     };
 
-    let cli_info = if log.level > log::LevelFilter::Info {
+    let reqwest_level = if log.level() > &log::LevelFilter::Debug {
+        &log::LevelFilter::Debug
+    } else {
+        log.level()
+    };
+
+    let cli_info = if log.level() > &log::LevelFilter::Info {
         fern::Dispatch::new().format(move |out, message, record| {
             let level = record.level();
             out.finish(format_args!(
@@ -91,8 +96,12 @@ pub fn setup_logging(log: &LogData) -> Result<(), Box<dyn std::error::Error>> {
         })
     }
     .filter(move |metadata| metadata.level() >= log::Level::Info)
-    .level(log.level)
-    .level_for("html5ever", html5ever_level)
+    .level(*log.level())
+    .level_for("html5ever", *html5ever_level)
+    .level_for("rustls::client::hs", *reqwest_level)
+    .level_for("rustls::client::tls13", *reqwest_level)
+    .level_for("tokio_util::codec::framed_impl", *reqwest_level)
+    .level_for("reqwest::blocking::wait", *reqwest_level)
     .chain(std::io::stdout());
     let cli_warn = fern::Dispatch::new()
         .format(move |out, message, record| {
@@ -104,16 +113,15 @@ pub fn setup_logging(log: &LogData) -> Result<(), Box<dyn std::error::Error>> {
             ));
         })
         .filter(move |metadata| metadata.level() <= log::Level::Warn)
-        .level(log.level)
+        .level(*log.level())
         .chain(std::io::stderr());
+
+    if log.path().exists() {
+        let _ = std::fs::remove_file(log.path());
+    }
 
     let file_log = fern::Dispatch::new()
         .format(move |out, message, record| {
-            let enabled = Paint::is_enabled();
-            if enabled {
-                Paint::disable();
-            }
-
             out.finish(format_args!(
                 "[{}] {} T[{:?}] [{}] {}:{}: {}",
                 chrono::Local::now().format("%Y-%m-%d %H:%M:%S%.6f %:z"),
@@ -122,15 +130,16 @@ pub fn setup_logging(log: &LogData) -> Result<(), Box<dyn std::error::Error>> {
                 record.module_path().unwrap_or("<unnamed>"),
                 record.file().unwrap_or("<unnamed>"),
                 record.line().unwrap_or(0),
-                message
+                Paint::wrapping(message).wrap()
             ));
-            if enabled {
-                Paint::enable();
-            }
         })
         .level(log::LevelFilter::Trace)
         .level_for("html5ever", log::LevelFilter::Info)
-        .chain(fern::log_file(&log.path)?);
+        .level_for("rustls::client::hs", log::LevelFilter::Debug)
+        .level_for("rustls::client::tls13", log::LevelFilter::Debug)
+        .level_for("tokio_util::codec::framed_impl", log::LevelFilter::Debug)
+        .level_for("reqwest::blocking::wait", log::LevelFilter::Debug)
+        .chain(fern::log_file(log.path())?);
 
     fern::Dispatch::new()
         .chain(cli_info)
