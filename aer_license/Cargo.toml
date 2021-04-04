@@ -1,0 +1,21 @@
+[package]
+name = "aer_license"
+version = "0.1.0"
+authors = ["AdmiringWorm <kim.nordmo@gmail.com>"]
+edition = "2018"
+publish = false
+
+[features]
+serialize = ["serde", "url/serde"]
+
+[dependencies]
+license = "1.1.10"
+serde = { version = "1.0.125", optional = true }
+url = "2.2.1"
+
+[dev-dependencies]
+rstest = "0.7.0"
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "doc_cfg"]

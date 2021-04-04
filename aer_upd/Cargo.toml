@@ -1,0 +1,26 @@
+[package]
+name = "aer_upd"
+version = "0.1.0"
+authors = ["AdmiringWorm <kim.nordmo@gmail.com>"]
+edition = "2018"
+
+[features]
+default = ["powershell", "toml_data"]
+toml_data = ["aer_data/chocolatey", "toml", "aer_data/serialize"]
+powershell = ["aer_data/serialize", "lazy_static", "serde_json", "serde"]
+
+[dependencies]
+aer_data = { path = "../aer_data" }
+aer_web = { path = "../aer_web" }
+lazy_static = { version = "1.4.0", optional = true }
+log = "0.4.14"
+serde = { version = "1.0.125", optional = true }
+serde_json = { version = "1.0.64", optional = true }
+toml = { version = "0.5.8", optional = true }
+
+[dev-dependencies]
+rstest = "0.7.0"
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "doc_cfg"]

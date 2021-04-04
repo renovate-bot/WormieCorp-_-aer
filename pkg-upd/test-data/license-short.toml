@@ -1,5 +1,0 @@
-[metadata]
-id = "test-package"
-project_url = "https://example-repo.org"
-summary = ""
-license = { url = "https://github.com/WormieCorp/pkg-upd/LICENSE.txt", expression = "MIT" }

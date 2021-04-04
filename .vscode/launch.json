@@ -7,16 +7,39 @@
         {
             "type": "lldb",
             "request": "launch",
-            "name": "Debug unit tests in library 'pkg-data'",
+            "name": "Debug executable 'aer'",
             "cargo": {
-                "args": [
-                    "test",
-                    "--no-run",
-                    "--lib",
-                    "--package=pkg-data"
-                ],
+                "args": ["build", "--bin=aer", "--package=aer"],
                 "filter": {
-                    "name": "pkg-data",
+                    "name": "aer",
+                    "kind": "bin"
+                }
+            },
+            "args": ["aer_upd/test-data/deserialize-full.aer.toml"],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in executable 'aer'",
+            "cargo": {
+                "args": ["test", "--no-run", "--bin=aer", "--package=aer"],
+                "filter": {
+                    "name": "aer",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in library 'aer_upd'",
+            "cargo": {
+                "args": ["test", "--no-run", "--lib", "--package=aer_upd"],
+                "filter": {
+                    "name": "aer_upd",
                     "kind": "lib"
                 }
             },
@@ -26,16 +49,11 @@
         {
             "type": "lldb",
             "request": "launch",
-            "name": "Debug unit tests in library 'pkg-license'",
+            "name": "Debug unit tests in library 'aer_data'",
             "cargo": {
-                "args": [
-                    "test",
-                    "--no-run",
-                    "--lib",
-                    "--package=pkg-license"
-                ],
+                "args": ["test", "--no-run", "--lib", "--package=aer_data"],
                 "filter": {
-                    "name": "pkg-license",
+                    "name": "aer_data",
                     "kind": "lib"
                 }
             },
@@ -45,16 +63,25 @@
         {
             "type": "lldb",
             "request": "launch",
-            "name": "Debug unit tests in library 'pkg-version'",
+            "name": "Debug unit tests in library 'aer_license'",
             "cargo": {
-                "args": [
-                    "test",
-                    "--no-run",
-                    "--lib",
-                    "--package=pkg-version"
-                ],
+                "args": ["test", "--no-run", "--lib", "--package=aer_license"],
                 "filter": {
-                    "name": "pkg-version",
+                    "name": "aer_license",
+                    "kind": "lib"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in library 'aer_version'",
+            "cargo": {
+                "args": ["test", "--no-run", "--lib", "--package=aer_version"],
+                "filter": {
+                    "name": "aer_version",
                     "kind": "lib"
                 }
             },
@@ -69,7 +96,7 @@
                 "args": [
                     "build",
                     "--example=chocolatey",
-                    "--package=pkg-version"
+                    "--package=aer_version"
                 ],
                 "filter": {
                     "name": "chocolatey",
@@ -88,7 +115,7 @@
                     "test",
                     "--no-run",
                     "--example=chocolatey",
-                    "--package=pkg-version"
+                    "--package=aer_version"
                 ],
                 "filter": {
                     "name": "chocolatey",
@@ -101,72 +128,11 @@
         {
             "type": "lldb",
             "request": "launch",
-            "name": "Debug unit tests in library 'pkg-upd'",
+            "name": "Debug unit tests in library 'aer_web'",
             "cargo": {
-                "args": [
-                    "test",
-                    "--no-run",
-                    "--lib",
-                    "--package=pkg-upd"
-                ],
+                "args": ["test", "--no-run", "--lib", "--package=aer_web"],
                 "filter": {
-                    "name": "pkg-upd",
-                    "kind": "lib"
-                }
-            },
-            "args": [],
-            "cwd": "${workspaceFolder}"
-        },
-        {
-            "type": "lldb",
-            "request": "launch",
-            "name": "Debug executable 'pkg-upd'",
-            "cargo": {
-                "args": [
-                    "build",
-                    "--bin=pkg-upd",
-                    "--package=pkg-upd"
-                ],
-                "filter": {
-                    "name": "pkg-upd",
-                    "kind": "bin"
-                }
-            },
-            "args": [],
-            "cwd": "${workspaceFolder}"
-        },
-        {
-            "type": "lldb",
-            "request": "launch",
-            "name": "Debug unit tests in executable 'pkg-upd'",
-            "cargo": {
-                "args": [
-                    "test",
-                    "--no-run",
-                    "--bin=pkg-upd",
-                    "--package=pkg-upd"
-                ],
-                "filter": {
-                    "name": "pkg-upd",
-                    "kind": "bin"
-                }
-            },
-            "args": [],
-            "cwd": "${workspaceFolder}"
-        },
-        {
-            "type": "lldb",
-            "request": "launch",
-            "name": "Debug unit tests in library 'pkg-web'",
-            "cargo": {
-                "args": [
-                    "test",
-                    "--no-run",
-                    "--lib",
-                    "--package=pkg-web"
-                ],
-                "filter": {
-                    "name": "pkg-web",
+                    "name": "aer_web",
                     "kind": "lib"
                 }
             },

@@ -1,10 +1,11 @@
 [workspace]
 members = [
-    "pkg-data",
-    "pkg-license",
-    "pkg-upd",
-    "pkg-version",
-    "pkg_web"
+    "aer",
+    "aer_data",
+    "aer_license",
+    "aer_upd",
+    "aer_version",
+    "aer_web"
 ]
 
 [profile.release]

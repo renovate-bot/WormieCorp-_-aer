@@ -1,3 +1,3 @@
-# pkg-upd
+# AER
 
 Tool to update packages

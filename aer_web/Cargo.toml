@@ -1,0 +1,21 @@
+[package]
+name = "aer_web"
+version = "0.1.0"
+authors = ["AdmiringWorm <kim.nordmo@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+lazy_static = "1.4.0"
+log = "0.4.14"
+aer_version = { path = "../aer_version" }
+regex = "1.4.5"
+select = "0.5.0"
+
+[dev-dependencies]
+rstest = "0.7.0"
+
+[target.'cfg(unix)'.dependencies]
+reqwest = { version = "0.11.2", features = ["blocking"] }
+
+[target.'cfg(windows)'.dependencies]
+reqwest = { version = "0.11.2", features = ["blocking", "rustls-tls"] }

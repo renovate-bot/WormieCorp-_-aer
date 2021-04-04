@@ -1,0 +1,8 @@
+[metadata]
+id = "test-package"
+project_url = "https://example-repo.org"
+summary = ""
+
+[metadata.license]
+url = "https://github.com/WormieCorp/aer/LICENSE.txt"
+expression = "MIT"
