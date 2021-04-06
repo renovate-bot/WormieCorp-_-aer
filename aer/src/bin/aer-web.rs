@@ -236,7 +236,7 @@ fn download_file(request: WebRequest, args: DownloadArguments) -> Result<(), Web
             response.set_work_dir(&work_dir);
 
             let (etag, last_modified) = get_info(&response);
-            let result = response.read(None)?; // TODO: pass in file name if specified
+            let result = response.read(None)?; // TODO: #15 pass in file name if specified
             info!("The following information was given by the server:");
             print_string("ETag", etag.trim_matches('"'));
             print_string("Last Modified", &last_modified);

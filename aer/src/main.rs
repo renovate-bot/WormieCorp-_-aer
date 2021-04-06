@@ -38,7 +38,7 @@ fn main() {
     let args = Arguments::from_args();
     logging::setup_logging(&args.log).expect("Unable to configure logging of the application!");
 
-    // TODO: Run updating on several threads
+    // TODO: #11 Run updating on several threads
     for file in args.package_files {
         match run_update(&file) {
             Err(err) => error!("An error occurred during update process: '{}'", err),
@@ -58,9 +58,10 @@ fn run_update(package_file: &Path) -> Result<(), Box<dyn std::error::Error>> {
         data.metadata().id()
     );
 
-    // TODO: Validate data according to specified rule set, default would be Core
+    // TODO: #12 Validate data according to specified rule set, default would be
+    // Core
 
-    // TODO: Run any before hooks
+    // TODO: #13 Run any global before hooks
 
     let request = WebRequest::create();
 
@@ -135,7 +136,7 @@ fn run_update(package_file: &Path) -> Result<(), Box<dyn std::error::Error>> {
             }
         }
 
-        // TODO: Download architecture files
+        // TODO: #14 Download architecture files
     }
 
     Ok(())
