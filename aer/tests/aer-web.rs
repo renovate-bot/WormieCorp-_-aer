@@ -1,17 +1,29 @@
 // Copyright (c) 2021 Kim J. Nordmo and WormieCorp.
 // Licensed under the MIT license. See LICENSE.txt file in the project
 
+use std::path::PathBuf;
 use std::process::Command;
 
 use assert_cmd::prelude::*;
+use lazy_static::lazy_static;
 use predicates::prelude::*;
+
+lazy_static! {
+    static ref LOG_DIR: PathBuf = std::env::temp_dir();
+}
 
 #[test]
 fn should_parse_with_correct_information_command() -> Result<(), Box<dyn std::error::Error>> {
     let mut cmd = Command::cargo_bin("aer-web")?;
+    let log_path = LOG_DIR.join("aer-web-tests-parse-correct.log");
 
-    cmd.args(&["parse", "https://github.com/codecov/codecov-exe/releases"])
-        .env("NO_COLOR", "true");
+    cmd.args(&[
+        "parse",
+        "https://github.com/codecov/codecov-exe/releases",
+        "--log",
+        log_path.to_str().unwrap(),
+    ])
+    .env("NO_COLOR", "true");
 
     cmd.assert().success().stdout(
         predicate::str::contains(
@@ -30,9 +42,17 @@ fn should_parse_with_correct_information_command() -> Result<(), Box<dyn std::er
 #[test]
 fn should_parse_with_regex_command() -> Result<(), Box<dyn std::error::Error>> {
     let mut cmd = Command::cargo_bin("aer-web")?;
+    let log_path = LOG_DIR.join("aer-web-tests-parse-regex.log");
 
-    cmd.args(&["parse", "https://chocolatey.org", "--regex", "github"])
-        .env("NO_COLOR", "true");
+    cmd.args(&[
+        "parse",
+        "https://chocolatey.org",
+        "--regex",
+        "github",
+        "--log",
+        log_path.to_str().unwrap(),
+    ])
+    .env("NO_COLOR", "true");
 
     cmd.assert().success().stdout(
         predicate::str::contains(
@@ -51,10 +71,13 @@ fn should_parse_with_regex_command() -> Result<(), Box<dyn std::error::Error>> {
 #[test]
 fn should_download_file_and_output_message() -> Result<(), Box<dyn std::error::Error>> {
     let mut cmd = Command::cargo_bin("aer-web")?;
+    let log_path = LOG_DIR.join("aer-web-tests-download-info.log");
 
     cmd.args(&[
         "download",
         "https://github.com/codecov/codecov-exe/releases/download/1.11.0/codecov-linux-x64.zip",
+        "--log",
+        log_path.to_str().unwrap(),
     ])
     .env("NO_COLOR", "true");
 
@@ -83,6 +106,7 @@ fn should_download_file_and_output_message() -> Result<(), Box<dyn std::error::E
 #[test]
 fn should_not_download_up_to_date_file() -> Result<(), Box<dyn std::error::Error>> {
     let mut cmd = Command::cargo_bin("aer-web")?;
+    let log_path = LOG_DIR.join("aer-web-tests-no-download.log");
 
     cmd.args(&[
         "download",
@@ -90,7 +114,10 @@ fn should_not_download_up_to_date_file() -> Result<(), Box<dyn std::error::Error
         "--etag",
         "f0e303406002b7449f3a92d94761fea6",
         "--last-modified",
-        "Mon, 29 Mar 2021 14:28:12 GMT"])
+        "Mon, 29 Mar 2021 14:28:12 GMT",
+        "--log",
+        log_path.to_str().unwrap()
+    ])
         .env("NO_COLOR", "true");
 
     cmd.assert().success().stdout(
