@@ -14,6 +14,8 @@ install:
       set PATH=%PATH%;%USERPROFILE%\.cargo\bin
       rustc -vV
       cargo -vV
+on_success:
+  - pwsh: rm target/release/*.exe
 cache:
   - C:\Users\appveyor\.cargo\bin -> Cargo.lock
   - C:\Users\appveyor\.cargo\.crates2.json -> Cargo.lock
