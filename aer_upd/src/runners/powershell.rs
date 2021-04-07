@@ -62,16 +62,10 @@ impl ScriptRunner for PowershellRunner {
             ""
         };
         let runner_template = format!(
-            "$ErrorActiorPreference = 'Stop'; $InformationPreference = 'Continue'; \
-             $VerbosePreference = 'Continue'; $DebugPreference = 'Continue'; {} $data = (\"{}\" | \
-             ConvertFrom-Json -AsHashtable); [int]$exitCode = 0; try {{ {} $data; [int]$exitCode \
-             = $LASTEXITCODE; }} catch {{ Write-Error $_; if ($LASTEXITCODE -eq 0) {{ \
-             [int]$exitCode = 1; }} }}; Write-Host \"## AER-SCRIPT-RUNNER:START ##\"; Write-Host \
-             ($data | ConvertTo-Json); Write-Host \"## AER-SCRIPT-RUNNER:END ##\"; if ($exitCode \
-             -ne 0) {{ throw \"Non-Zero exit code: $exitCode\"; }}",
-            override_script,
-            runner_data.replace("\"", "`\""),
-            script.display()
+            include_str!("wrapper.ps1"),
+            extra_code = override_script,
+            script_data = runner_data.replace("\"", "`\""),
+            script_path = script.display()
         );
         trace!("Data before running: {:?}", data);
         info!("Running script: {}", script.display());
