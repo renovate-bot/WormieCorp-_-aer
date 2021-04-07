@@ -25,12 +25,9 @@ jobs:
           override: true
       - uses: Swatinem/rust-cache@v1
         with:
-          key: ${{ steps.toolchain.outputs.rustc }}-${{ steps.toolchain.outputs.rustc_hash }}-${{ matrix.os }}-${{ hashFiles('Cargo.lock') }}
+          key: ${{ matrix.os }}-${{ hashFiles('Cargo.toml') }}
       - name: Build projects with all features
-        uses: actions-rs/cargo@v1
-        with:
-          command: build
-          args: --release --all-features --locked
+        run: cargo build --release --all-features --locked
       - name: Upload artifacts
         uses: actions/upload-artifact@v2
         with:
@@ -42,16 +39,15 @@ jobs:
             target/release/*.bin
             target/release/*.exe
       - name: Test projects with all features
-        if: ${{ runner.os != 'Windows' }} # Can't get powershell runner to work, due to execution policies
-        uses: actions-rs/cargo@v1
-        with:
-          command: test
-          args: --release --all-features --locked
+        run: |
+          if ($IsWindows) { Set-ExecutionPolicy RemoteSigned -Force }
+          cargo test --release --all-features --locked
+        shell: pwsh
   coverage:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [macos-latest, ubuntu-latest]
+        os: [macos-latest, ubuntu-latest] # Coverage report do not work on Windows
 
     steps:
       - uses: actions/checkout@v2
@@ -65,7 +61,7 @@ jobs:
           components: llvm-tools-preview
       - uses: Swatinem/rust-cache@v1
         with:
-          key: ${{ steps.toolchain.outputs.rustc }}-${{ steps.toolchain.outputs.rustc_hash }}-${{ matrix.os }}-${{ hashFiles('Cargo.lock') }}
+          key: ${{ matrix.os }}-${{ hashFiles('Cargo.toml') }}
       - name: Run unit tests with coverage report
         uses: Swatinem/fucov@v1
       - name: Upload coverage report

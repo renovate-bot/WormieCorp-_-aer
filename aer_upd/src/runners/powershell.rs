@@ -57,7 +57,7 @@ impl ScriptRunner for PowershellRunner {
         let runner_data = serde_json::to_string(&data.to_runner_data()).unwrap();
         let script = script.canonicalize().unwrap();
         let override_script = if cfg!(windows) {
-            "Set-ExecutionPolicy Bypass -Scope Process;"
+            "Set-ExecutionPolicy Bypass -Scope Process -Force;"
         } else {
             ""
         };
@@ -79,7 +79,13 @@ impl ScriptRunner for PowershellRunner {
         let cmd = Command::new(path)
             .current_dir(cwd)
             .env("POWERSHELL_TELEMETRY_OPTOUT", "1")
-            .args(&["-NoProfile", "-NonInteractive", "-Command"])
+            .args(&[
+                "-ExecutionPolicy",
+                "Bypass",
+                "-NoProfile",
+                "-NonInteractive",
+                "-Command",
+            ])
             .arg(runner_template)
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
