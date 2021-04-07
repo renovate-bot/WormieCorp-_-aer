@@ -64,7 +64,8 @@ fn testing_multiple_versions() -> Result<(), Box<dyn std::error::Error>> {
     let mut cmd = Command::cargo_bin("aer-ver")?;
     let log_path = LOG_DIR.join("aer-ver-tests-multiple.log");
 
-    cmd.args(&["3.2.1", "5.2-alpha.5", "--log", log_path.to_str().unwrap()]);
+    cmd.args(&["3.2.1", "5.2-alpha.5", "--log", log_path.to_str().unwrap()])
+        .env("NO_COLOR", "true");
 
     cmd.assert().success().stdout(predicate::eq(
         "Checking 2 versions...
@@ -79,11 +80,42 @@ fn testing_multiple_versions() -> Result<(), Box<dyn std::error::Error>> {
 
        Raw Version : 5.2-alpha.5
 
-        Chocolatey : 5.2-alpha-0005
+        Chocolatey : 5.2-alpha0005
  SemVer from Choco : 5.2.0-alpha.5
 
             SemVer : None
  Choco from SemVer : None
+",
+    ));
+
+    Ok(())
+}
+
+#[test]
+fn testing_with_trace_logging() -> Result<(), Box<dyn std::error::Error>> {
+    let mut cmd = Command::cargo_bin("aer-ver")?;
+    let log_path = LOG_DIR.join("aer-ver-trace.log");
+
+    cmd.args(&[
+        "4.2.1-alpha54.2",
+        "--log-level",
+        "trace",
+        "--log",
+        log_path.to_str().unwrap(),
+        "--no-color",
+    ]);
+
+    cmd.assert().success().stdout(predicate::eq(
+        "[DEBUG]: Finished configuring logging
+[INFO]: Checking 1 version...
+
+[INFO]:        Raw Version : 4.2.1-alpha54.2
+
+[INFO]:         Chocolatey : 4.2.1-alpha0054-0002
+[INFO]:  SemVer from Choco : 4.2.1-alpha-54.2
+
+[INFO]:             SemVer : 4.2.1-alpha54.2
+[INFO]:  Choco from SemVer : 4.2.1-alpha0054-0002
 ",
     ));
 

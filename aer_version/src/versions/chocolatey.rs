@@ -4,6 +4,7 @@
 #![cfg(feature = "chocolatey")]
 #![cfg_attr(docsrs, doc(cfg(feature = "chocolatey")))]
 
+use std::cmp::Ordering;
 use std::fmt::Display;
 
 use semver::Identifier;
@@ -14,7 +15,7 @@ use serde::ser::{Serialize, Serializer};
 
 use crate::{FixVersion, SemVersion, SemanticVersionError};
 
-#[derive(Default, Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Default, Debug, Clone, Eq)]
 pub struct ChocoVersion {
     major: u8,
     minor: u8,
@@ -53,7 +54,7 @@ impl ChocoVersion {
             )));
         } else if !val.chars().next().unwrap_or('.').is_digit(10) {
             return Err(Box::new(SemanticVersionError::ParseError(
-                "The version string to not start with a number".into(),
+                "The version string do not start with a number".into(),
             )));
         }
 
@@ -144,6 +145,44 @@ impl ChocoVersion {
     pub fn with_prerelease(mut self, pre: Vec<Identifier>) -> Self {
         self.set_prerelease(pre);
         self
+    }
+}
+
+impl Ord for ChocoVersion {
+    fn cmp(&self, other: &Self) -> Ordering {
+        let major_cmp = self.major.cmp(&other.major);
+        if major_cmp != Ordering::Equal {
+            return major_cmp;
+        }
+        let minor_cmp = self.minor.cmp(&other.minor);
+        if minor_cmp != Ordering::Equal {
+            return minor_cmp;
+        }
+        let patch_cmp = self.patch.unwrap_or(0).cmp(&other.patch.unwrap_or(0));
+        if patch_cmp != Ordering::Equal {
+            return patch_cmp;
+        }
+        let build_cmp = self.build.unwrap_or(0).cmp(&other.build.unwrap_or(0));
+        if build_cmp != Ordering::Equal {
+            return build_cmp;
+        }
+
+        self.pre_release.cmp(&other.pre_release)
+    }
+}
+
+impl PartialOrd for ChocoVersion {
+    fn partial_cmp(&self, other: &Self) -> std::option::Option<std::cmp::Ordering> {
+        Some(self.cmp(&other))
+    }
+}
+
+impl PartialEq for ChocoVersion {
+    fn eq(&self, other: &Self) -> bool {
+        self.major == other.major
+            && self.minor == other.minor
+            && self.patch.unwrap_or(0) == other.patch.unwrap_or(0)
+            && self.build.unwrap_or(0) == other.build.unwrap_or(0)
     }
 }
 
@@ -296,8 +335,10 @@ fn get_val<T: num::PrimInt>(value: T, max_value: T) -> T {
 }
 
 fn extract_prerelease(val: &str) -> Vec<Identifier> {
+    const NORMAL_PRE: &str = "unstable";
     let mut result = vec![];
     let mut current = String::new();
+    let mut next = String::new();
 
     for ch in val.chars().take_while(|ch| *ch != '+') {
         if ch == '-' || ch == '.' {
@@ -305,15 +346,46 @@ fn extract_prerelease(val: &str) -> Vec<Identifier> {
                 current.clear();
                 result.push(res);
             }
+            if let Some(res) = get_identifier(&next) {
+                result.push(res);
+                next.clear();
+            }
+
+            continue;
+        } else if ch.is_digit(10) {
+            if result.is_empty() && current.is_empty() {
+                result.push(Identifier::AlphaNumeric(NORMAL_PRE.into()));
+            } else if current.chars().any(|ch| !ch.is_digit(10)) {
+                if let Some(res) = get_identifier(&current) {
+                    current.clear();
+                    result.push(res);
+                }
+            }
         } else if ch.is_digit(10) && result.is_empty() && current.is_empty() {
-            result.push(Identifier::AlphaNumeric("unstable".into()));
-            current.push(ch);
-        } else {
-            current.push(ch)
+            result.push(Identifier::AlphaNumeric(NORMAL_PRE.into()));
+        } else if !ch.is_digit(10)
+            && current.is_empty()
+            && result.len() > 1
+            && result.first() == Some(&Identifier::AlphaNumeric(NORMAL_PRE.into()))
+        {
+            result.remove(0);
+            next = result.pop().unwrap().to_string();
+        } else if !ch.is_digit(10)
+            && !current.is_empty()
+            && result.first() == Some(&Identifier::AlphaNumeric(NORMAL_PRE.into()))
+        {
+            result.remove(0);
+            next = current.clone();
+            current.clear();
         }
+        current.push(ch);
     }
 
     if let Some(res) = get_identifier(&current) {
+        result.push(res);
+    }
+
+    if let Some(res) = get_identifier(&next) {
         result.push(res);
     }
 
@@ -360,10 +432,22 @@ impl Display for ChocoVersion {
             write!(f, ".{}", build)?;
         }
 
+        let mut prev_alpha = false;
+
         for pre in &self.pre_release {
             match pre {
-                Identifier::Numeric(num) => write!(f, "-{:04}", num)?,
-                num => write!(f, "-{}", num)?,
+                Identifier::Numeric(num) => {
+                    if prev_alpha {
+                        write!(f, "{:04}", num)?;
+                        prev_alpha = false;
+                    } else {
+                        write!(f, "-{:04}", num)?;
+                    }
+                }
+                num => {
+                    write!(f, "-{}", num)?;
+                    prev_alpha = true;
+                }
             }
         }
 
@@ -382,7 +466,7 @@ mod tests {
         let version = ChocoVersion::new(1, 2);
         let expected = "1.2";
 
-        let actual = format!("{}", version);
+        let actual = version.to_string();
 
         assert_eq!(actual, expected);
     }
@@ -393,7 +477,7 @@ mod tests {
         version.set_patch(10);
         let expected = "1.6.10";
 
-        let actual = format!("{}", version);
+        let actual = version.to_string();
 
         assert_eq!(actual, expected);
     }
@@ -405,7 +489,7 @@ mod tests {
         version.set_build(99);
         let expected = "0.8.3.99";
 
-        let actual = format!("{}", version);
+        let actual = version.to_string();
 
         assert_eq!(actual, expected);
     }
@@ -416,7 +500,7 @@ mod tests {
         version.set_build(5);
         let expected = "1.1.0.5";
 
-        let actual = format!("{}", version);
+        let actual = version.to_string();
 
         assert_eq!(actual, expected);
     }
@@ -426,7 +510,7 @@ mod tests {
         let version = ChocoVersion::with_build(5, 1, 1, 3);
         let expected = "5.1.1.3";
 
-        let actual = format!("{}", version);
+        let actual = version.to_string();
 
         assert_eq!(actual, expected);
     }
@@ -437,7 +521,7 @@ mod tests {
         version.add_fix().unwrap();
         let expected = format!("2.1.0.{}", chrono::Local::now().format("%Y%m%d"));
 
-        let actual = format!("{}", version);
+        let actual = version.to_string();
 
         assert_eq!(actual, expected);
     }
@@ -449,7 +533,7 @@ mod tests {
         version.add_fix().unwrap();
         let expected = "0.2.0.5";
 
-        let actual = format!("{}", version);
+        let actual = version.to_string();
 
         assert_eq!(actual, expected);
     }
@@ -461,7 +545,7 @@ mod tests {
         version.add_fix().unwrap();
         let expected = format!("3.3.0.{}", chrono::Local::now().format("%Y%m%d"));
 
-        let actual = format!("{}", version);
+        let actual = version.to_string();
 
         assert_eq!(actual, expected);
     }
@@ -474,15 +558,17 @@ mod tests {
         case("0.2.65", "0.2.65"),
         case("3.5.0.2342", "3.5.0.2342"),
         case("3.3-alpha001", "3.3-alpha0001"),
-        case("3.2-alpha.10", "3.2-alpha-0010"),
-        case("3.3.5-beta-11", "3.3.5-beta-0011"),
+        case("3.2-alpha.10", "3.2-alpha0010"),
+        case("3.3.5-beta-11", "3.3.5-beta0011"),
         case("3.1.1+55", "3.1.1"),
-        case("4.0.0.2-beta.5", "4.0.0.2-beta-0005"),
-        case("0.1.0-55", "0.1.0-unstable-0055")
+        case("4.0.0.2-beta.5", "4.0.0.2-beta0005"),
+        case("0.1.0-55", "0.1.0-unstable0055"),
+        case("4.2.1-alpha54.2", "4.2.1-alpha0054-0002"),
+        case("6.1.0-55-alpha", "6.1.0-alpha0055")
     )]
     fn parse_should_create_correct_versions(v: &str, expected: &str) {
         let version = ChocoVersion::parse(v).unwrap();
-        let version = format!("{}", version);
+        let version = version.to_string();
 
         assert_eq!(version, expected);
     }
@@ -524,16 +610,19 @@ mod tests {
         ),
         case(
             "5.1.1-alpha.5",
-            ChocoVersion::with_patch(5, 1, 1).with_prerelease(vec![Identifier::AlphaNumeric("alpha".into()),Identifier::Numeric(5)])
+            ChocoVersion::with_patch(5, 1, 1).with_prerelease(vec![Identifier::AlphaNumeric("alpha".into()), Identifier::Numeric(5)])
         ),
         case(
             "1.2.3-beta50",
-            ChocoVersion::with_patch(1, 2, 3).with_prerelease(vec![Identifier::AlphaNumeric("beta0050".into())])
+            ChocoVersion::with_patch(1, 2, 3).with_prerelease(vec![Identifier::AlphaNumeric("beta".into()), Identifier::Numeric(50)])
         ),
         case(
             "3.0.0-666",
             ChocoVersion::with_patch(3, 0, 0).with_prerelease(vec![Identifier::AlphaNumeric("unstable".into()), Identifier::Numeric(666)])
-        )
+        ),
+        case("2.0.0-55beta", ChocoVersion::with_patch(2, 0, 0).with_prerelease(vec![Identifier::AlphaNumeric("beta".into()), Identifier::Numeric(55)])),
+        case("4.2.1-alpha54.2", ChocoVersion::with_patch(4, 2, 1).with_prerelease(vec![Identifier::AlphaNumeric("alpha".into()), Identifier::Numeric(54), Identifier::Numeric(2)])),
+        case("6.1.0-55-alpha", ChocoVersion::with_patch(6, 1, 0).with_prerelease(vec![Identifier::AlphaNumeric("alpha".into()).into(), Identifier::Numeric(55)]))
     )]
     fn from_should_create_choco_version_with_prerelease(test: &str, expected: ChocoVersion) {
         let actual = ChocoVersion::from(SemVersion::parse(test).unwrap());
@@ -553,5 +642,33 @@ mod tests {
         let actual = SemVersion::from(ChocoVersion::parse(test).unwrap());
 
         assert_eq!(actual, expected);
+    }
+
+    #[test]
+    fn should_sort_versions() {
+        let mut versions = vec![
+            ChocoVersion::parse("1.2.0-55").unwrap(),
+            ChocoVersion::parse("1.2").unwrap(),
+            ChocoVersion::parse("0.4.2.1").unwrap(),
+            ChocoVersion::parse("6.2.0").unwrap(),
+            ChocoVersion::parse("1.0.0-rc").unwrap(),
+            ChocoVersion::parse("1.0.0-alpha").unwrap(),
+            ChocoVersion::parse("5.0-beta.56").unwrap(),
+            ChocoVersion::parse("5.0-beta.55").unwrap(),
+        ];
+        let expected = vec![
+            ChocoVersion::parse("0.4.2.1").unwrap(),
+            ChocoVersion::parse("1.0.0-alpha").unwrap(),
+            ChocoVersion::parse("1.0.0-rc").unwrap(),
+            ChocoVersion::parse("1.2.0-55").unwrap(),
+            ChocoVersion::parse("1.2").unwrap(),
+            ChocoVersion::parse("5.0-beta.55").unwrap(),
+            ChocoVersion::parse("5.0-beta.56").unwrap(),
+            ChocoVersion::parse("6.2.0").unwrap(),
+        ];
+
+        versions.sort();
+
+        assert_eq!(versions, expected);
     }
 }
