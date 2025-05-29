@@ -23,7 +23,7 @@ jobs:
         with:
           toolchain: stable
           override: true
-      - uses: Swatinem/rust-cache@v1
+      - uses: Swatinem/rust-cache@v2
         with:
           key: ${{ matrix.os }}-${{ hashFiles('Cargo.toml') }}
       - name: Build projects with all features
@@ -60,7 +60,7 @@ jobs:
           toolchain: nightly
           override: true
           components: llvm-tools-preview
-      - uses: Swatinem/rust-cache@v1
+      - uses: Swatinem/rust-cache@v2
         with:
           key: ${{ matrix.os }}-${{ hashFiles('Cargo.toml') }}
       - name: Run unit tests with coverage report and all features
