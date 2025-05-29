@@ -9,7 +9,7 @@ publish = false
 serialize = ["serde", "url/serde"]
 
 [dependencies]
-license = "1.1.10"
+license = "3.0.0"
 serde = { version = "1.0.126", optional = true }
 url = "2.2.2"
 
